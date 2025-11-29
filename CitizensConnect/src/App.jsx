@@ -7,15 +7,19 @@ import Updates from "./Updates";
 import Issues from "./Issues";
 import NewsPage from "./pages/NewsPage";
 import NewsTicker from "./components/NewsTicker";
+import Login from "./components/Login";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { SocketProvider } from "./context/SocketContext";
 
 import "./App.css";
+import "./components/Login.css";
 
-import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
+import { FaUserCircle, FaBars, FaTimes, FaSignOutAlt } from "react-icons/fa";
 
-const App = () => {
+const AppContent = () => {
   const [showModal, setShowModal] = useState(false);
-  const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   function handleProfileClick() {
     setShowModal(true);
@@ -25,8 +29,7 @@ const App = () => {
     setShowModal(true);
   }
 
-  function handleSignUp(userData) {
-    if (userData) setUser(userData);
+  function handleLoginSuccess() {
     setShowModal(false);
   }
 
@@ -38,6 +41,11 @@ const App = () => {
     setMenuOpen((v) => !v);
   }
 
+  function handleLogout() {
+    logout();
+    setShowModal(false);
+  }
+
   return (
     <BrowserRouter>
       <div className="app-root">
@@ -46,7 +54,7 @@ const App = () => {
             <div className="logo">
               <Link to="/" onClick={() => setMenuOpen(false)} aria-label="CitizenConnect home">
                 <span className="logo-mark">🟣</span>
-                <span className="logo-text">CitizenConnect</span>
+                <span className="logo-text">CitizensConnect</span>
               </Link>
             </div>
 
@@ -61,11 +69,14 @@ const App = () => {
 
             <div className="header-actions">
               {!user ? (
-                <button className="signup-btn" onClick={handleSignUpClick}>Sign Up</button>
+                <button className="signup-btn" onClick={handleSignUpClick}>Login</button>
               ) : (
-                <button className="icon-btn" onClick={handleProfileClick} aria-label="Open profile">
-                  <FaUserCircle size={26} />
-                </button>
+                <div className="user-menu">
+                  <span className="user-role">{user.role}</span>
+                  <button className="icon-btn" onClick={handleProfileClick} aria-label="Open profile">
+                    <FaUserCircle size={26} />
+                  </button>
+                </div>
               )}
 
               <button className="mobile-toggle" onClick={toggleMenu} aria-label="Toggle menu">
@@ -89,9 +100,9 @@ const App = () => {
           <div className="modal-overlay" role="dialog" aria-modal="true" onClick={closeModal}>
             <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
               {!user ? (
-                <SignUpForm onSignUp={handleSignUp} onCancel={() => setShowModal(false)} />
+                <Login onSuccess={handleLoginSuccess} onCancel={() => setShowModal(false)} />
               ) : (
-                <ProfileView user={user} onClose={() => setShowModal(false)} />
+                <ProfileView user={user} onClose={() => setShowModal(false)} onLogout={handleLogout} />
               )}
             </div>
           </div>
@@ -144,18 +155,37 @@ function SignUpForm({ onSignUp, onCancel }) {
   );
 }
 
-function ProfileView({ user, onClose }) {
+function ProfileView({ user, onClose, onLogout }) {
   return (
     <div className="profile-view">
       <h3 className="modal-title">Profile</h3>
-      <p><strong>Name:</strong> {user.name}</p>
-      <p><strong>Email:</strong> {user.email}</p>
-      <p><strong>Role:</strong> {user.role}</p>
-      <div style={{ marginTop: 16 }}>
+      <div className="profile-info">
+        <p><strong>Name:</strong> {user.name}</p>
+        <p><strong>Email:</strong> {user.email}</p>
+        <p><strong>Role:</strong> {user.role}</p>
+        {user.aadharNumber && <p><strong>Aadhar:</strong> ****{user.aadharNumber.slice(-4)}</p>}
+        {user.employeeId && <p><strong>Employee ID:</strong> {user.employeeId}</p>}
+        {user.party && <p><strong>Party:</strong> {user.party}</p>}
+      </div>
+      <div className="profile-actions">
+        <button className="btn-ghost" onClick={onLogout}>
+          <FaSignOutAlt style={{ marginRight: 8 }} />
+          Logout
+        </button>
         <button className="btn-primary" onClick={onClose}>Close</button>
       </div>
     </div>
   );
 }
+
+const App = () => {
+  return (
+    <AuthProvider>
+      <SocketProvider>
+        <AppContent />
+      </SocketProvider>
+    </AuthProvider>
+  );
+};
 
 export default App;

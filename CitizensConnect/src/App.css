@@ -56,6 +56,9 @@ body{
 .icon-btn{background:transparent;border:0;color:#fff; cursor:pointer; padding:6px}
 .mobile-toggle{display:none;background:transparent;border:0;color:#fff;font-size:18px;}
 
+.user-menu{display:flex;align-items:center;gap:8px}
+.user-role{background:rgba(255,255,255,0.2);color:#fff;padding:4px 8px;border-radius:6px;font-size:0.8rem;font-weight:600}
+
 .site-main{flex:1; padding:40px 20px; max-width:var(--container); margin:0 auto; width:100%}
 
 .hero {
@@ -116,6 +119,53 @@ body{
 }
 
 .center-contents{display:flex;align-items:center;justify-content:center}
+
+.profile-view {
+  padding: 20px;
+}
+
+.profile-view .profile-info {
+  margin-bottom: 20px;
+}
+
+.profile-view .profile-info p {
+  margin: 8px 0;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.profile-view .profile-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.profile-view .profile-actions button {
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.profile-view .profile-actions button:first-child {
+  background: #dc2626;
+}
+
+.profile-view .profile-actions button:first-child:hover {
+  background: #b91c1c;
+}
+
+.profile-view .profile-actions button:last-child {
+  background: var(--brand);
+}
+
+.profile-view .profile-actions button:last-child:hover {
+  background: var(--brand-600);
+}
 
 @media (max-width: 1024px){
   .reps-grid{grid-template-columns: repeat(2,1fr)}

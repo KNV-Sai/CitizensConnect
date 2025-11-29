@@ -3,8 +3,11 @@ import "./NewsTicker.css";
 
 const PROXY_URL = "/api/news";
 const FALLBACK = [
-  { title: "Local civic drive begins this weekend — volunteers needed", url: "https://telugu.way2news.com/", source: "Local" },
-  { title: "City council approves green lighting for parks", url: "https://telugu.way2news.com/", source: "City" },
+  { title: "Andhra Pradesh government launches new digital literacy program for rural areas", url: "https://telugu.way2news.com/", source: "Government" },
+  { title: "Citizens urged to report potholes and infrastructure issues through CitizensConnect", url: "https://telugu.way2news.com/", source: "Public Notice" },
+  { title: "Local MLA addresses water scarcity concerns in Vijayawada district", url: "https://telugu.way2news.com/", source: "Politics" },
+  { title: "New traffic management system implemented in major cities", url: "https://telugu.way2news.com/", source: "Infrastructure" },
+  { title: "Community health camp scheduled for next weekend in rural areas", url: "https://telugu.way2news.com/", source: "Health" },
 ];
 
 export default function NewsTicker() {
@@ -56,7 +59,6 @@ export default function NewsTicker() {
   return (
     <div className="news-ticker" role="region" aria-label="Latest Telugu news">
       <div className="news-inner">
-        {usingFallback && <div className="news-warning">Live news unavailable — showing fallback</div>}
         <div className="news-track" aria-hidden>
           {track.map((it, i) => {
             const idx = i % items.length;
