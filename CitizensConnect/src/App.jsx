@@ -1,35 +1,161 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 
-function App() {
-  const [count, setCount] = useState(0)
+import Dashboard from "./Dashboard";
+import Representatives from "./Representatives";
+import Updates from "./Updates";
+import Issues from "./Issues";
+import NewsPage from "./pages/NewsPage";
+import NewsTicker from "./components/NewsTicker";
+
+import "./App.css";
+
+import { FaUserCircle, FaBars, FaTimes } from "react-icons/fa";
+
+const App = () => {
+  const [showModal, setShowModal] = useState(false);
+  const [user, setUser] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  function handleProfileClick() {
+    setShowModal(true);
+  }
+
+  function handleSignUpClick() {
+    setShowModal(true);
+  }
+
+  function handleSignUp(userData) {
+    if (userData) setUser(userData);
+    setShowModal(false);
+  }
+
+  function closeModal() {
+    setShowModal(false);
+  }
+
+  function toggleMenu() {
+    setMenuOpen((v) => !v);
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <BrowserRouter>
+      <div className="app-root">
+        <header className="site-header">
+          <div className="header-inner">
+            <div className="logo">
+              <Link to="/" onClick={() => setMenuOpen(false)} aria-label="CitizenConnect home">
+                <span className="logo-mark">🟣</span>
+                <span className="logo-text">CitizenConnect</span>
+              </Link>
+            </div>
+
+            <nav className={`main-nav ${menuOpen ? "open" : ""}`} aria-label="Main navigation">
+              <ul>
+                <li><Link to="/" onClick={() => setMenuOpen(false)}>Dashboard</Link></li>
+                <li><Link to="/issues" onClick={() => setMenuOpen(false)}>Issues</Link></li>
+                <li><Link to="/representatives" onClick={() => setMenuOpen(false)}>Representatives</Link></li>
+                <li><Link to="/updates" onClick={() => setMenuOpen(false)}>Updates</Link></li>
+              </ul>
+            </nav>
+
+            <div className="header-actions">
+              {!user ? (
+                <button className="signup-btn" onClick={handleSignUpClick}>Sign Up</button>
+              ) : (
+                <button className="icon-btn" onClick={handleProfileClick} aria-label="Open profile">
+                  <FaUserCircle size={26} />
+                </button>
+              )}
+
+              <button className="mobile-toggle" onClick={toggleMenu} aria-label="Toggle menu">
+                {menuOpen ? <FaTimes /> : <FaBars />}
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="site-main">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/issues" element={<Issues />} />
+            <Route path="/representatives" element={<Representatives />} />
+            <Route path="/updates" element={<Updates />} />
+            <Route path="/news/:id" element={<NewsPage />} />
+          </Routes>
+        </main>
+
+        {showModal && (
+          <div className="modal-overlay" role="dialog" aria-modal="true" onClick={closeModal}>
+            <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+              {!user ? (
+                <SignUpForm onSignUp={handleSignUp} onCancel={() => setShowModal(false)} />
+              ) : (
+                <ProfileView user={user} onClose={() => setShowModal(false)} />
+              )}
+            </div>
+          </div>
+        )}
+
+        <NewsTicker />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+    </BrowserRouter>
+  );
+};
+
+function SignUpForm({ onSignUp, onCancel }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("Citizen");
+
+  function submit(e) {
+    e.preventDefault();
+    onSignUp({ name, email, role });
+  }
+
+  return (
+    <form className="modal-form" onSubmit={submit}>
+      <h3 className="modal-title">Sign Up</h3>
+
+      <label className="field">
+        <span className="field-label">Name</span>
+        <input value={name} onChange={(e) => setName(e.target.value)} required />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Email</span>
+        <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
+      </label>
+
+      <label className="field">
+        <span className="field-label">Role</span>
+        <select value={role} onChange={(e) => setRole(e.target.value)}>
+          <option>Citizen</option>
+          <option>Politician</option>
+          <option>Reporter</option>
+        </select>
+      </label>
+
+      <div className="modal-actions">
+        <button type="submit" className="btn-primary">Create account</button>
+        <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </form>
+  );
 }
 
-export default App
+function ProfileView({ user, onClose }) {
+  return (
+    <div className="profile-view">
+      <h3 className="modal-title">Profile</h3>
+      <p><strong>Name:</strong> {user.name}</p>
+      <p><strong>Email:</strong> {user.email}</p>
+      <p><strong>Role:</strong> {user.role}</p>
+      <div style={{ marginTop: 16 }}>
+        <button className="btn-primary" onClick={onClose}>Close</button>
+      </div>
+    </div>
+  );
+}
+
+export default App;
