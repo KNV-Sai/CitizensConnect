@@ -147,11 +147,11 @@ export const AuthProvider = ({ children }) => {
         uid: 'dev_' + employeeId,
         email: developer.email,
         role: 'Developer',
-        name: employeeId,
+        name: developer.name,
         employeeId,
         department: developer.department,
         designation: developer.designation,
-        profileImage: `https://ui-avatars.com/api/?name=${encodeURIComponent(employeeId)}&background=22c55e&color=fff&size=120`,
+        profileImage: `https://ui-avatars.com/api/?name=${encodeURIComponent(developer.name)}&background=22c55e&color=fff&size=120`,
         authenticated: true
       };
       setUser(mockUser);
