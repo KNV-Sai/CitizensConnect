@@ -211,6 +211,18 @@ export const SocketProvider = ({ children }) => {
   };
 
   const markTicketDone = (ticketId) => {
+    // Update local state immediately for better UX
+    const updatedTicket = {
+      status: 'solved',
+      progress: 100
+    };
+
+    setTickets(prev => prev.map(ticket =>
+      ticket.id === ticketId
+        ? { ...ticket, ...updatedTicket }
+        : ticket
+    ));
+
     if (socket && isConnected) {
       socket.emit('mark_ticket_done', {
         ticketId,
@@ -227,6 +239,36 @@ export const SocketProvider = ({ children }) => {
         ticketId,
         politicianId,
         assignedBy: user.uid
+      });
+    }
+  };
+
+  // Developer functions
+  const deleteTicket = (ticketId) => {
+    // Update local state immediately
+    setTickets(prev => prev.filter(ticket => ticket.id !== ticketId));
+
+    if (socket && isConnected) {
+      socket.emit('delete_ticket', {
+        ticketId,
+        deletedBy: user.uid,
+        deletedByName: user.name,
+        deletedByRole: user.role
+      });
+    }
+  };
+
+  const deleteComment = (ticketId, messageId) => {
+    // Update local state immediately
+    setMessages(prev => prev.filter(msg => msg.id !== messageId));
+
+    if (socket && isConnected) {
+      socket.emit('delete_comment', {
+        ticketId,
+        messageId,
+        deletedBy: user.uid,
+        deletedByName: user.name,
+        deletedByRole: user.role
       });
     }
   };
@@ -418,6 +460,22 @@ export const SocketProvider = ({ children }) => {
           progress: 45,
           createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
           location: 'Multiple Intersections, Vijayawada'
+        },
+        {
+          id: 'mock_7',
+          title: 'Park bench needs minor repair',
+          description: 'A small crack in the park bench near the entrance needs to be fixed. It\'s a simple repair job.',
+          category: 'Other',
+          priority: 'easy',
+          status: 'open',
+          author: 'John Doe',
+          authorId: 'demo_user_7',
+          authorRole: 'Citizen',
+          upvotes: 3,
+          voters: [],
+          progress: 0,
+          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+          location: 'City Park, Vijayawada'
         }
       ];
 
@@ -524,7 +582,9 @@ export const SocketProvider = ({ children }) => {
     joinTicketRoom,
     leaveTicketRoom,
     refreshOnlineIssues,
-    likeComment
+    likeComment,
+    deleteTicket,
+    deleteComment
   };
 
   return (

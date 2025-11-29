@@ -11,6 +11,7 @@ import './Tickets.css';
 
 const PRIORITY_LEVELS = {
   low: { label: 'Low', color: '#10b981', icon: Clock },
+  easy: { label: 'Easy', color: '#22c55e', icon: Clock },
   medium: { label: 'Medium', color: '#f59e0b', icon: AlertTriangle },
   high: { label: 'High', color: '#ef4444', icon: AlertTriangle },
   urgent: { label: 'Urgent', color: '#dc2626', icon: AlertTriangle }
@@ -28,7 +29,7 @@ const Tickets = () => {
     tickets, onlineIssues, refreshOnlineIssues, lastOnlineUpdate,
     createTicket, voteTicket, markTicketDone, assignPolitician,
     messages, sendMessage, loadMessages, joinTicketRoom, leaveTicketRoom,
-    likeComment
+    likeComment, deleteTicket, deleteComment
   } = useSocket();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -449,6 +450,7 @@ const Tickets = () => {
             const PriorityIcon = PRIORITY_LEVELS[ticket.priority]?.icon || Clock;
             const priorityColor = PRIORITY_LEVELS[ticket.priority]?.color || '#6b7280';
 
+
             return (
               <div key={ticket.id} className={`ticket-card ${ticket.status} ${ticket.isOnlineIssue ? 'online-issue' : ''}`}>
                 <div className="ticket-header">
@@ -470,15 +472,32 @@ const Tickets = () => {
                     )}
                   </div>
 
-                  {user?.role === 'Politician' && ticket.status === 'open' && (
-                    <button
-                      className="mark-done-btn"
-                      onClick={() => handleMarkDone(ticket.id)}
-                    >
-                      <CheckCircle size={16} />
-                      Mark Done
-                    </button>
-                  )}
+                  <div className="ticket-actions">
+                    {user?.role === 'Politician' && ticket.status === 'open' && (
+                      <button
+                        className="mark-done-btn"
+                        onClick={() => handleMarkDone(ticket.id)}
+                      >
+                        <CheckCircle size={16} />
+                        Mark Done
+                      </button>
+                    )}
+
+                    {user?.role === 'Developer' && (
+                      <button
+                        className="delete-ticket-btn"
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to delete this issue?')) {
+                            deleteTicket(ticket.id);
+                          }
+                        }}
+                        title="Delete Issue (Developer Only)"
+                      >
+                        <X size={16} />
+                        Delete Issue
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <h3 className="ticket-title">{ticket.title}</h3>
@@ -663,6 +682,22 @@ const Tickets = () => {
                                 <span className="like-count">({message.likeCount})</span>
                               )}
                             </button>
+
+                            {user?.role === 'Developer' && (
+                              <button
+                                className="message-delete-btn"
+                                onClick={() => {
+                                  if (window.confirm('Are you sure you want to delete this comment?')) {
+                                    deleteComment(selectedTicket.id, messageId);
+                                  }
+                                }}
+                                title="Delete Comment (Developer Only)"
+                              >
+                                <X size={14} />
+                                <span className="delete-text">Delete</span>
+                              </button>
+                            )}
+
                             {message.likes?.includes(user?.uid) && (
                               <span className="user-liked-indicator">You liked this</span>
                             )}
