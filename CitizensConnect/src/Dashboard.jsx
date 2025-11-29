@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "./context/AuthContext";
 import { useSocket } from "./context/SocketContext";
 import { CheckCircle, Clock, TrendingUp, Users, MessageSquare, AlertTriangle, Shield, FileText } from "lucide-react";
+import BarChart from "./Components/Charts/BarChart";
+import DoughnutChart from "./Components/Charts/DoughnutChart";
+import LineChart from "./Components/Charts/LineChart";
 import "./Dashboard.css";
 
 const Dashboard = () => {
@@ -31,6 +34,31 @@ const Dashboard = () => {
       ticketsRaised: 2 // Tickets raised this month
     });
   }, [tickets]);
+
+  // Prepare chart data
+  const ticketStatusData = [
+    { label: 'Open Issues', value: stats.openTickets },
+    { label: 'Resolved Issues', value: stats.solvedTickets }
+  ];
+
+  // Mock category data based on available tickets (in real app, this would be calculated from actual data)
+  const categoryData = [
+    { label: 'Infrastructure', value: Math.floor(stats.totalTickets * 0.35) },
+    { label: 'Utilities', value: Math.floor(stats.totalTickets * 0.25) },
+    { label: 'Public Safety', value: Math.floor(stats.totalTickets * 0.20) },
+    { label: 'Healthcare', value: Math.floor(stats.totalTickets * 0.10) },
+    { label: 'Other', value: Math.floor(stats.totalTickets * 0.10) }
+  ];
+
+  // Mock trend data for the last 6 months
+  const trendData = [
+    { label: 'Jan', value: 45 },
+    { label: 'Feb', value: 52 },
+    { label: 'Mar', value: 38 },
+    { label: 'Apr', value: 61 },
+    { label: 'May', value: 55 },
+    { label: 'Jun', value: stats.totalTickets }
+  ];
 
   const recentTickets = tickets
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -157,6 +185,41 @@ const Dashboard = () => {
               <TrendingUp size={16} />
               <span>+15%</span>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Charts Section */}
+      <section className="charts-section">
+        <div className="charts-header">
+          <h2>Data Insights</h2>
+          <p>Visual representation of platform statistics and trends</p>
+        </div>
+
+        <div className="charts-grid">
+          <div className="chart-card">
+            <BarChart
+              data={ticketStatusData}
+              title="Issue Status Distribution"
+              color="#6a47f2"
+            />
+          </div>
+
+          <div className="chart-card">
+            <DoughnutChart
+              data={categoryData}
+              title="Issues by Category"
+              colors={['#6a47f2', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']}
+            />
+          </div>
+
+          <div className="chart-card">
+            <LineChart
+              data={trendData}
+              title="Monthly Issue Trends"
+              color="#6a47f2"
+              lineColor="#6a47f2"
+            />
           </div>
         </div>
       </section>

@@ -351,7 +351,7 @@ export const SocketProvider = ({ children }) => {
           authorRole: 'Citizen',
           upvotes: 18,
           voters: [],
-          progress: 100,
+          progress: 90,
           createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
           location: 'Park Street, Vijayawada'
         },
@@ -399,7 +399,7 @@ export const SocketProvider = ({ children }) => {
           authorRole: 'Citizen',
           upvotes: 29,
           voters: [],
-          progress: 100,
+          progress: 65,
           createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
           location: 'Market Area, Vijayawada'
         },
