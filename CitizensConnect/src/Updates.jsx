@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   updatesCategories,
   getRecentUpdates,
@@ -18,7 +18,6 @@ import {
   RefreshCw
 } from "lucide-react";
 import "./Updates.css";
-import "./Updates.css";
 
 export default function Updates() {
   const [expandedCategories, setExpandedCategories] = useState({});
@@ -26,6 +25,21 @@ export default function Updates() {
   const [searchTerm, setSearchTerm] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Date filtering state
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [datePreset, setDatePreset] = useState('last30days');
+
+  // Set default to last 30 days on component mount
+  useEffect(() => {
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+
+    setEndDate(today.toISOString().split('T')[0]);
+    setStartDate(thirtyDaysAgo.toISOString().split('T')[0]);
+  }, []);
 
   // Toggle category expansion
   const toggleCategory = (categoryKey) => {
@@ -62,7 +76,52 @@ export default function Updates() {
     }
   };
 
-  // Filter updates based on search and priority
+  // Get count of updates for a specific date range
+  const getUpdatesCountForRange = (days) => {
+    const today = new Date();
+    const startRange = new Date();
+    startRange.setDate(today.getDate() - days);
+
+    const allUpdates = Object.values(updatesCategories).flatMap(category => category.updates);
+    return allUpdates.filter(update => {
+      const updateDate = new Date(update.date);
+      return updateDate >= startRange && updateDate <= today;
+    }).length;
+  };
+
+  // Handle date preset changes
+  const handleDatePresetChange = (preset) => {
+    setDatePreset(preset);
+    const today = new Date();
+
+    switch (preset) {
+      case 'last7days':
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        setStartDate(sevenDaysAgo.toISOString().split('T')[0]);
+        setEndDate(today.toISOString().split('T')[0]);
+        break;
+      case 'last30days':
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        setStartDate(thirtyDaysAgo.toISOString().split('T')[0]);
+        setEndDate(today.toISOString().split('T')[0]);
+        break;
+      case 'last90days':
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(today.getDate() - 90);
+        setStartDate(ninetyDaysAgo.toISOString().split('T')[0]);
+        setEndDate(today.toISOString().split('T')[0]);
+        break;
+      case 'custom':
+        // Keep current dates for custom range
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Filter updates based on search, priority, and date range
   const filteredUpdates = useMemo(() => {
     const allUpdates = Object.entries(updatesCategories).flatMap(([categoryKey, category]) =>
       category.updates.map(update => ({
@@ -82,9 +141,16 @@ export default function Updates() {
 
       const matchesPriority = priorityFilter === 'all' || update.priority === priorityFilter;
 
-      return matchesSearch && matchesPriority;
+      // Date range filtering
+      const updateDate = new Date(update.date);
+      const start = startDate ? new Date(startDate) : null;
+      const end = endDate ? new Date(endDate) : null;
+
+      const matchesDateRange = (!start || updateDate >= start) && (!end || updateDate <= end);
+
+      return matchesSearch && matchesPriority && matchesDateRange;
     });
-  }, [searchTerm, priorityFilter]);
+  }, [searchTerm, priorityFilter, startDate, endDate]);
 
   // Group filtered updates by category
   const groupedUpdates = useMemo(() => {
@@ -145,6 +211,91 @@ export default function Updates() {
               </select>
             </div>
           )}
+
+          {/* Date Range Controls */}
+          <div className="date-controls">
+            <div className="date-filter-header">
+              <h4>📅 Filter by Date</h4>
+              <span className="filter-info">
+                Showing {filteredUpdates.length} of {Object.values(updatesCategories).reduce((total, category) => total + category.updates.length, 0)} updates
+              </span>
+            </div>
+
+            <div className="date-presets">
+              <div className="preset-group">
+                <button
+                  className={`preset-btn ${datePreset === 'last7days' ? 'active' : ''}`}
+                  onClick={() => handleDatePresetChange('last7days')}
+                >
+                  <span className="preset-label">Last 7 Days</span>
+                  <span className="preset-count">
+                    {getUpdatesCountForRange(7)} updates
+                  </span>
+                </button>
+                <button
+                  className={`preset-btn ${datePreset === 'last30days' ? 'active' : ''}`}
+                  onClick={() => handleDatePresetChange('last30days')}
+                >
+                  <span className="preset-label">Last 30 Days</span>
+                  <span className="preset-count">
+                    {getUpdatesCountForRange(30)} updates
+                  </span>
+                </button>
+              </div>
+              <div className="preset-group">
+                <button
+                  className={`preset-btn ${datePreset === 'last90days' ? 'active' : ''}`}
+                  onClick={() => handleDatePresetChange('last90days')}
+                >
+                  <span className="preset-label">Last 90 Days</span>
+                  <span className="preset-count">
+                    {getUpdatesCountForRange(90)} updates
+                  </span>
+                </button>
+                <button
+                  className={`preset-btn ${datePreset === 'custom' ? 'active' : ''}`}
+                  onClick={() => handleDatePresetChange('custom')}
+                >
+                  <span className="preset-label">Custom Range</span>
+                  <span className="preset-count">Select dates</span>
+                </button>
+              </div>
+            </div>
+
+            {datePreset === 'custom' && (
+              <div className="custom-dates">
+                <div className="date-input-group">
+                  <label>From Date:</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="date-input"
+                  />
+                </div>
+                <div className="date-input-group">
+                  <label>To Date:</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="date-input"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Current Date Range Display */}
+            <div className="current-range">
+              <span className="range-label">Current Range:</span>
+              <span className="range-dates">
+                {startDate && endDate ?
+                  `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}` :
+                  'All dates'
+                }
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -168,12 +319,41 @@ export default function Updates() {
                     <span className="update-count">
                       {groupedUpdates[categoryKey]?.length || 0} updates
                     </span>
-                    {categoryStats.find(stat => stat.key === categoryKey)?.recentUpdate && (
+                    {category.lastUpdated && (
                       <span className="last-updated">
-                        Latest: {new Date(categoryStats.find(stat => stat.key === categoryKey).recentUpdate).toLocaleDateString()}
+                        Last updated: {new Date(category.lastUpdated).toLocaleDateString()}
+                      </span>
+                    )}
+                    {category.availableDateRange && (
+                      <span className="date-range">
+                        Available: {category.availableDateRange.totalDays} days ({new Date(category.availableDateRange.earliest).toLocaleDateString()} - {new Date(category.availableDateRange.latest).toLocaleDateString()})
                       </span>
                     )}
                   </div>
+                  {category.availableOptions && (
+                    <div className="available-options">
+                      <div className="options-header">
+                        <span className="options-label">📅 Available Date Options:</span>
+                        {category.availableDateRange && (
+                          <span className="date-coverage">
+                            {category.availableDateRange.totalDays} days of data
+                          </span>
+                        )}
+                      </div>
+                      <div className="options-list">
+                        {category.availableOptions.map((option, idx) => (
+                          <span key={idx} className="option-tag">{option}</span>
+                        ))}
+                      </div>
+                      {category.availableDateRange && (
+                        <div className="date-range-info">
+                          <span className="range-text">
+                            From {new Date(category.availableDateRange.earliest).toLocaleDateString()} to {new Date(category.availableDateRange.latest).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="expand-icon">
@@ -297,19 +477,69 @@ export default function Updates() {
         ))}
       </div>
 
-      {/* Recent Updates Summary */}
-      <div className="recent-updates-summary">
-        <h3>📊 Recent Activity Summary</h3>
-        <div className="summary-stats">
-          {categoryStats.map((stat) => (
-            <div key={stat.key} className="stat-item">
-              <span className="stat-icon">{stat.icon}</span>
-              <div className="stat-info">
-                <span className="stat-number">{stat.updateCount}</span>
-                <span className="stat-label">{stat.title}</span>
-              </div>
+      {/* Updates Overview Summary */}
+      <div className="updates-overview">
+        <h3>📊 Updates Overview</h3>
+        <div className="overview-grid">
+          <div className="overview-card">
+            <h4>Total Updates Available</h4>
+            <div className="total-count">
+              {Object.values(updatesCategories).reduce((total, category) => total + category.updates.length, 0)}
             </div>
-          ))}
+            <p>Across all categories</p>
+          </div>
+
+          <div className="overview-card">
+            <h4>Date Range Coverage</h4>
+            <div className="date-coverage">
+              <span className="earliest-date">
+                From: {new Date(Math.min(...Object.values(updatesCategories).map(cat => new Date(cat.availableDateRange?.earliest || cat.updates[0]?.date)))).toLocaleDateString()}
+              </span>
+              <span className="latest-date">
+                To: {new Date(Math.max(...Object.values(updatesCategories).map(cat => new Date(cat.availableDateRange?.latest || cat.updates[0]?.date)))).toLocaleDateString()}
+              </span>
+            </div>
+            <p>Historical data available</p>
+          </div>
+
+          <div className="overview-card">
+            <h4>Available Filter Options</h4>
+            <div className="filter-options-summary">
+              <span className="filter-count">5+ date presets</span>
+              <span className="custom-range">Custom ranges</span>
+              <span className="priority-filters">Priority filters</span>
+            </div>
+            <p>Flexible filtering options</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Category Statistics */}
+      <div className="recent-updates-summary">
+        <h3>📈 Category Statistics</h3>
+        <div className="summary-stats">
+          {categoryStats.map((stat) => {
+            const categoryData = updatesCategories[stat.key];
+            return (
+              <div key={stat.key} className="stat-item">
+                <span className="stat-icon">{stat.icon}</span>
+                <div className="stat-info">
+                  <span className="stat-number">{stat.updateCount}</span>
+                  <span className="stat-label">{stat.title}</span>
+                  {categoryData?.lastUpdated && (
+                    <span className="stat-last-updated">
+                      Updated: {new Date(categoryData.lastUpdated).toLocaleDateString()}
+                    </span>
+                  )}
+                  {categoryData?.availableDateRange && (
+                    <span className="stat-range">
+                      {categoryData.availableDateRange.totalDays} days available
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
