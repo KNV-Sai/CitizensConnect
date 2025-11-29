@@ -255,19 +255,69 @@ class OnlineDataService {
         allIssues.push(issue);
       });
 
+      // Remove duplicates based on title similarity and URL
+      const uniqueIssues = this.removeDuplicateIssues(allIssues);
+
       // Sort by published date (newest first)
-      allIssues.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      uniqueIssues.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
       // Limit to recent 50 issues
-      const limitedIssues = allIssues.slice(0, 50);
+      const limitedIssues = uniqueIssues.slice(0, 50);
 
-      console.log(`Fetched ${limitedIssues.length} online issues`);
+      console.log(`Fetched ${limitedIssues.length} online issues (removed ${allIssues.length - limitedIssues.length} duplicates)`);
 
       return limitedIssues;
     } catch (error) {
       console.error('Error fetching online issues:', error);
       return [];
     }
+  }
+
+  // Remove duplicate issues based on title similarity and URL
+  removeDuplicateIssues(issues) {
+    const uniqueIssues = [];
+    const seenTitles = new Set();
+    const seenUrls = new Set();
+
+    for (const issue of issues) {
+      // Skip if URL already seen
+      if (issue.url && seenUrls.has(issue.url)) {
+        continue;
+      }
+
+      // Create a normalized title for comparison (remove common words and punctuation)
+      const normalizedTitle = issue.title
+        .toLowerCase()
+        .replace(/[^\w\s]/g, '') // Remove punctuation
+        .replace(/\b(the|and|or|but|in|on|at|to|for|of|with|by|a|an)\b/g, '') // Remove common words
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim();
+
+      // Skip if very similar title already seen (basic similarity check)
+      let isDuplicate = false;
+      for (const seenTitle of seenTitles) {
+        // Check if titles are very similar (80% overlap in words)
+        const titleWords = new Set(normalizedTitle.split(' '));
+        const seenWords = new Set(seenTitle.split(' '));
+        const intersection = new Set([...titleWords].filter(x => seenWords.has(x)));
+        const union = new Set([...titleWords, ...seenWords]);
+
+        if (intersection.size / union.size > 0.8 && intersection.size > 3) {
+          isDuplicate = true;
+          break;
+        }
+      }
+
+      if (!isDuplicate) {
+        uniqueIssues.push(issue);
+        seenTitles.add(normalizedTitle);
+        if (issue.url) {
+          seenUrls.add(issue.url);
+        }
+      }
+    }
+
+    return uniqueIssues;
   }
 
   // Get online issues (from cache or fresh fetch)

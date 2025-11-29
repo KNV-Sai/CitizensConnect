@@ -24,6 +24,7 @@ export const SocketProvider = ({ children }) => {
   const [onlineIssues, setOnlineIssues] = useState([]);
   const [messages, setMessages] = useState([]);
   const [lastOnlineUpdate, setLastOnlineUpdate] = useState(null);
+  const [mockTicketsAdded, setMockTicketsAdded] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -323,7 +324,7 @@ export const SocketProvider = ({ children }) => {
       const mockTickets = [
         {
           id: 'mock_1',
-          title: 'Potholes on Main Road causing traffic issues',
+          title: 'Major potholes blocking MG Road traffic',
           description: 'There are several large potholes on MG Road between Gandhi Statue and Clock Tower that need immediate repair. Vehicles are getting damaged and it\'s causing traffic congestion.',
           category: 'Infrastructure',
           priority: 'high',
@@ -331,14 +332,14 @@ export const SocketProvider = ({ children }) => {
           author: 'Rajesh Kumar',
           authorId: 'demo_user_1',
           authorRole: 'Citizen',
-          upvotes: 31,
+          upvotes: 24,
           voters: [],
           createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
           location: 'MG Road, Vijayawada'
         },
         {
           id: 'mock_2',
-          title: 'Street light not working in Park Street',
+          title: 'Broken streetlight on Park Street junction',
           description: 'The street light outside house number 45 on Park Street has been non-functional for the past week. This is causing safety concerns during nighttime.',
           category: 'Public Safety',
           priority: 'medium',
@@ -346,14 +347,14 @@ export const SocketProvider = ({ children }) => {
           author: 'Priya Sharma',
           authorId: 'demo_user_2',
           authorRole: 'Citizen',
-          upvotes: 31,
+          upvotes: 18,
           voters: [],
           createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
           location: 'Park Street, Vijayawada'
         },
         {
           id: 'mock_3',
-          title: 'Garbage collection irregular in Sector 7',
+          title: 'Waste collection delayed in residential Sector 7',
           description: 'Municipal garbage collection has been irregular in Sector 7 for the past two weeks. Waste is piling up and causing hygiene issues in the community.',
           category: 'Utilities',
           priority: 'urgent',
@@ -361,19 +362,72 @@ export const SocketProvider = ({ children }) => {
           author: 'Amit Patel',
           authorId: 'demo_user_3',
           authorRole: 'Citizen',
-          upvotes: 31,
+          upvotes: 35,
           voters: [],
           createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
           location: 'Sector 7, Vijayawada'
+        },
+        {
+          id: 'mock_4',
+          title: 'Water supply disruption in Residential Colony',
+          description: 'Water supply has been irregular in the Residential Colony for the past 3 days. Residents are facing severe water shortage and daily activities are affected.',
+          category: 'Utilities',
+          priority: 'high',
+          status: 'open',
+          author: 'Sunita Reddy',
+          authorId: 'demo_user_4',
+          authorRole: 'Citizen',
+          upvotes: 42,
+          voters: [],
+          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+          location: 'Residential Colony, Vijayawada'
+        },
+        {
+          id: 'mock_5',
+          title: 'Overflowing drain causing flooding in Market Area',
+          description: 'The main drain in the Market Area is overflowing during rains, causing water logging and posing health risks to shopkeepers and customers.',
+          category: 'Infrastructure',
+          priority: 'urgent',
+          status: 'solved',
+          author: 'Karthik Nair',
+          authorId: 'demo_user_5',
+          authorRole: 'Citizen',
+          upvotes: 29,
+          voters: [],
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
+          location: 'Market Area, Vijayawada'
+        },
+        {
+          id: 'mock_6',
+          title: 'Lack of proper signage at busy intersections',
+          description: 'Several busy intersections in the city lack proper traffic signage, leading to confusion and potential accidents. This needs immediate attention.',
+          category: 'Public Safety',
+          priority: 'medium',
+          status: 'open',
+          author: 'Meera Joshi',
+          authorId: 'demo_user_6',
+          authorRole: 'Citizen',
+          upvotes: 15,
+          voters: [],
+          createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
+          location: 'Multiple Intersections, Vijayawada'
         }
       ];
 
-      // Only add mock data if we don't have any real tickets
-      if (tickets.length === 0) {
+      // Only add mock data if we don't have any real tickets and haven't added them yet
+      if (tickets.length === 0 && !mockTicketsAdded) {
+        console.log('Adding mock tickets...');
         setTimeout(() => {
-          mockTickets.forEach(ticket => {
-            setTickets(prev => [...prev, ticket]);
+          console.log('Actually adding mock tickets now');
+          setTickets(prev => {
+            // Double-check to prevent duplicates
+            if (prev.length === 0) {
+              console.log('Setting mock tickets');
+              return mockTickets;
+            }
+            return prev;
           });
+          setMockTicketsAdded(true);
         }, 1000); // Small delay to simulate loading
       }
     }

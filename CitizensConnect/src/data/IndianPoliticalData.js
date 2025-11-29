@@ -8,7 +8,7 @@ export const nationalLeaders = [
     role: "President of India",
     state: "National",
     profileUrl: "https://en.wikipedia.org/wiki/Droupadi_Murmu",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Droupadi_Murmu_official_portrait.jpg/300px-Droupadi_Murmu_official_portrait.jpg"
+    imageUrl: "/src/assets/representatives/droupadi-murmu.svg"
   },
   {
     name: "Jagdeep Dhankhar",
@@ -16,7 +16,7 @@ export const nationalLeaders = [
     role: "Vice President of India",
     state: "National",
     profileUrl: "https://en.wikipedia.org/wiki/Jagdeep_Dhankhar",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Shri_Jagdeep_Dhankhar_official_portrait_%282%29_%28cropped%29.jpg/300px-Shri_Jagdeep_Dhankhar_official_portrait_%282%29_%28cropped%29.jpg"
+    imageUrl: "/src/assets/representatives/jagdeep-dhankhar.svg"
   },
   {
     name: "Narendra Modi",
@@ -24,7 +24,7 @@ export const nationalLeaders = [
     role: "Prime Minister of India",
     state: "National",
     profileUrl: "https://en.wikipedia.org/wiki/Narendra_Modi",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Narendra_Modi_official_portrait.jpg/300px-Narendra_Modi_official_portrait.jpg"
+    imageUrl: "/src/assets/representatives/narendra-modi.svg"
   },
   {
     name: "Amit Shah",
@@ -32,7 +32,7 @@ export const nationalLeaders = [
     role: "Union Home Minister",
     state: "National",
     profileUrl: "https://en.wikipedia.org/wiki/Amit_Shah",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Amit_Shah_official_portrait.jpg/300px-Amit_Shah_official_portrait.jpg"
+    imageUrl: "/src/assets/representatives/amit-shah.svg"
   },
   {
     name: "Nirmala Sitharaman",
@@ -40,7 +40,7 @@ export const nationalLeaders = [
     role: "Union Finance Minister",
     state: "National",
     profileUrl: "https://en.wikipedia.org/wiki/Nirmala_Sitharaman",
-    imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Nirmala_Sitharaman_official_portrait.jpg/300px-Nirmala_Sitharaman_official_portrait.jpg"
+    imageUrl: "/src/assets/representatives/nirmala-sitharaman.svg"
   }
 ];
 
@@ -61,21 +61,21 @@ export const stateGovernments = [
         party: "TDP",
         role: "Chief Minister",
         profileUrl: "https://en.wikipedia.org/wiki/N._Chandrababu_Naidu",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/N._Chandrababu_Naidu.jpg/300px-N._Chandrababu_Naidu.jpg"
+        imageUrl: "/src/assets/representatives/chandrababu-naidu.svg"
       },
       {
         name: "S. Abdul Nazeer",
         party: "Independent",
         role: "Governor",
         profileUrl: "https://en.wikipedia.org/wiki/S._Abdul_Nazeer",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/N._Chandrababu_Naidu.jpg/300px-N._Chandrababu_Naidu.jpg"
+        imageUrl: "/src/assets/representatives/default-governor.svg"
       },
       {
         name: "Y. S. Jagan Mohan Reddy",
         party: "YSRCP",
         role: "Leader of Opposition",
         profileUrl: "https://en.wikipedia.org/wiki/Y._S._Jaganmohan_Reddy",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Y._S._Jaganmohan_Reddy.jpg/300px-Y._S._Jaganmohan_Reddy.jpg"
+        imageUrl: "/src/assets/representatives/jagan-mohan-reddy.svg"
       }
     ]
   },
@@ -318,14 +318,14 @@ export const stateGovernments = [
         party: "JMM",
         role: "Chief Minister",
         profileUrl: "https://en.wikipedia.org/wiki/Champai_Soren",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Champai_Soren.jpg/300px-Champai_Soren.jpg"
+        imageUrl: "/src/assets/representatives/hemant-soren.svg"
       },
       {
         name: "C.P. Radhakrishnan",
         party: "Independent",
         role: "Governor",
         profileUrl: "https://en.wikipedia.org/wiki/C._P._Radhakrishnan",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Champai_Soren.jpg/300px-Champai_Soren.jpg"
+        imageUrl: "/src/assets/representatives/default-governor.svg"
       }
     ]
   },
@@ -561,14 +561,14 @@ export const stateGovernments = [
         party: "BJP",
         role: "Chief Minister",
         profileUrl: "https://en.wikipedia.org/wiki/Mohan_Charan_Majhi",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Mohan_Charan_Majhi.jpg/300px-Mohan_Charan_Majhi.jpg"
+        imageUrl: "/src/assets/representatives/mohan-charan-majhi.svg"
       },
       {
         name: "Ganeshi Lal",
         party: "BJP",
         role: "Governor",
         profileUrl: "https://en.wikipedia.org/wiki/Ganeshi_Lal",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Mohan_Charan_Majhi.jpg/300px-Mohan_Charan_Majhi.jpg"
+        imageUrl: "/src/assets/representatives/default-governor.svg"
       }
     ]
   },
@@ -750,14 +750,14 @@ export const stateGovernments = [
         party: "BJP",
         role: "Chief Minister",
         profileUrl: "https://en.wikipedia.org/wiki/Yogi_Adityanath",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Yogi_Adityanath.jpg/300px-Yogi_Adityanath.jpg"
+        imageUrl: "/src/assets/representatives/yogi-adityanath.svg"
       },
       {
         name: "Anandiben Patel",
         party: "BJP",
         role: "Governor",
         profileUrl: "https://en.wikipedia.org/wiki/Anandiben_Patel",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Yogi_Adityanath.jpg/300px-Yogi_Adityanath.jpg"
+        imageUrl: "/src/assets/representatives/default-governor.svg"
       }
     ]
   },
@@ -804,14 +804,14 @@ export const stateGovernments = [
         party: "TMC",
         role: "Chief Minister",
         profileUrl: "https://en.wikipedia.org/wiki/Mamata_Banerjee",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Mamata_Banerjee.jpg/300px-Mamata_Banerjee.jpg"
+        imageUrl: "/src/assets/representatives/mamata-banerjee.svg"
       },
       {
         name: "C.V. Ananda Bose",
         party: "Independent",
         role: "Governor",
         profileUrl: "https://en.wikipedia.org/wiki/C._V._Ananda_Bose",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Mamata_Banerjee.jpg/300px-Mamata_Banerjee.jpg"
+        imageUrl: "/src/assets/representatives/default-governor.svg"
       }
     ]
   }
@@ -830,14 +830,14 @@ export const unionTerritories = [
         party: "IAS",
         role: "Lieutenant Governor",
         profileUrl: "https://en.wikipedia.org/wiki/V._K._Saxena",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/V._K._Saxena.jpg/300px-V._K._Saxena.jpg"
+        imageUrl: "/src/assets/representatives/default-governor.svg"
       },
       {
         name: "Arvind Kejriwal",
         party: "AAP",
         role: "Chief Minister",
         profileUrl: "https://en.wikipedia.org/wiki/Arvind_Kejriwal",
-        imageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Arvind_Kejriwal.jpg/300px-Arvind_Kejriwal.jpg"
+        imageUrl: "/src/assets/representatives/arvind-kejriwal.svg"
       }
     ]
   },

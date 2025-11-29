@@ -182,11 +182,32 @@ const Tickets = () => {
     setSelectedTicket(null);
   };
 
-  // Combine tickets and online issues
-  const allIssues = [
+  // Combine tickets and online issues, preferring user tickets over online issues
+  const combinedIssues = [
     ...tickets.map(ticket => ({ ...ticket, isOnlineIssue: false })),
     ...onlineIssues.map(issue => ({ ...issue, isOnlineIssue: true }))
   ];
+
+  // Remove duplicates - if same title exists, keep the user-created ticket
+  const titleMap = new Map();
+  const allIssues = [];
+
+  combinedIssues.forEach(issue => {
+    const existing = titleMap.get(issue.title);
+    if (!existing) {
+      titleMap.set(issue.title, issue);
+      allIssues.push(issue);
+    } else if (!existing.isOnlineIssue && issue.isOnlineIssue) {
+      // Keep existing user ticket, ignore online duplicate
+      return;
+    } else if (existing.isOnlineIssue && !issue.isOnlineIssue) {
+      // Replace online issue with user ticket
+      const index = allIssues.indexOf(existing);
+      allIssues[index] = issue;
+      titleMap.set(issue.title, issue);
+    }
+    // If both are online or both are user tickets, keep the first one
+  });
 
   // Filter and sort issues
   const filteredAndSortedTickets = allIssues
