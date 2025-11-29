@@ -90,16 +90,37 @@ body{
 
 .reps-grid{
   display:grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap:28px;
   margin-top:20px;
 }
 .rep-card{
   background:var(--card); border-radius:12px; padding:22px; box-shadow:var(--shadow-2);
-  min-height:160px; display:flex; flex-direction:column; justify-content:space-between;
+  min-height:180px; display:flex; flex-direction:column; justify-content:space-between;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.rep-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-1);
 }
 .rep-name{color:var(--brand); font-weight:700; font-size:1.1rem}
-.rep-party{color:#a98af5}
+.rep-party{color:#a98af5; font-weight:600}
+.hierarchy-section {
+  margin-bottom: 50px;
+}
+.section-title {
+  position: relative;
+}
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #6a47f2, #a98af5);
+  border-radius: 2px;
+}
 
 .btn-primary{
   background:var(--brand); color:#fff; border:0; padding:10px 16px; border-radius:10px; cursor:pointer; font-weight:700;
