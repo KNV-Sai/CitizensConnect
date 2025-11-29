@@ -230,7 +230,7 @@ const Tickets = () => {
     .sort((a, b) => {
       switch (sortBy) {
         case 'priority':
-          const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+          const priorityOrder = { urgent: 4, high: 3, medium: 2, easy: 1.5, low: 1 };
           return priorityOrder[b.priority] - priorityOrder[a.priority];
         case 'votes':
           return b.upvotes - a.upvotes;
@@ -449,6 +449,7 @@ const Tickets = () => {
           filteredAndSortedTickets.map(ticket => {
             const PriorityIcon = PRIORITY_LEVELS[ticket.priority]?.icon || Clock;
             const priorityColor = PRIORITY_LEVELS[ticket.priority]?.color || '#6b7280';
+
 
 
             return (

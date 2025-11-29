@@ -217,11 +217,25 @@ export const SocketProvider = ({ children }) => {
       progress: 100
     };
 
-    setTickets(prev => prev.map(ticket =>
-      ticket.id === ticketId
-        ? { ...ticket, ...updatedTicket }
-        : ticket
-    ));
+    // Check if it's a regular ticket or online issue
+    const ticketIndex = tickets.findIndex(ticket => ticket.id === ticketId);
+    const onlineIssueIndex = onlineIssues.findIndex(issue => issue.id === ticketId);
+
+    if (ticketIndex !== -1) {
+      // Update regular ticket
+      setTickets(prev => prev.map(ticket =>
+        ticket.id === ticketId
+          ? { ...ticket, ...updatedTicket }
+          : ticket
+      ));
+    } else if (onlineIssueIndex !== -1) {
+      // Update online issue
+      setOnlineIssues(prev => prev.map(issue =>
+        issue.id === ticketId
+          ? { ...issue, ...updatedTicket }
+          : issue
+      ));
+    }
 
     if (socket && isConnected) {
       socket.emit('mark_ticket_done', {
@@ -245,8 +259,17 @@ export const SocketProvider = ({ children }) => {
 
   // Developer functions
   const deleteTicket = (ticketId) => {
-    // Update local state immediately
-    setTickets(prev => prev.filter(ticket => ticket.id !== ticketId));
+    // Check if it's a regular ticket or online issue
+    const ticketIndex = tickets.findIndex(ticket => ticket.id === ticketId);
+    const onlineIssueIndex = onlineIssues.findIndex(issue => issue.id === ticketId);
+
+    if (ticketIndex !== -1) {
+      // Delete regular ticket
+      setTickets(prev => prev.filter(ticket => ticket.id !== ticketId));
+    } else if (onlineIssueIndex !== -1) {
+      // Delete online issue
+      setOnlineIssues(prev => prev.filter(issue => issue.id !== ticketId));
+    }
 
     if (socket && isConnected) {
       socket.emit('delete_ticket', {
@@ -476,6 +499,22 @@ export const SocketProvider = ({ children }) => {
           progress: 0,
           createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
           location: 'City Park, Vijayawada'
+        },
+        {
+          id: 'mock_8',
+          title: 'Street light bulb replacement needed',
+          description: 'The street light on Elm Street has a burnt-out bulb that needs replacement. Low priority maintenance task.',
+          category: 'Utilities',
+          priority: 'low',
+          status: 'open',
+          author: 'Jane Smith',
+          authorId: 'demo_user_8',
+          authorRole: 'Citizen',
+          upvotes: 2,
+          voters: [],
+          progress: 0,
+          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+          location: 'Elm Street, Vijayawada'
         }
       ];
 
