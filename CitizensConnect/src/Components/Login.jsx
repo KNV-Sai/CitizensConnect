@@ -179,10 +179,11 @@ const Login = ({ onSuccess, onCancel }) => {
               type="text"
               value={formData.polIdentifier}
               onChange={(e) => handleInputChange('polIdentifier', e.target.value)}
-              placeholder="Enter your politician identifier"
+              placeholder="e.g., NarendraModi, RahulGandhi, ArvindKejriwal"
               className="form-input"
               required
             />
+            <small className="form-hint">Available: NarendraModi, RahulGandhi, ArvindKejriwal, MamataBanerjee, YogiAdityanath, etc.</small>
           </div>
 
           <div className="form-group">
@@ -221,10 +222,11 @@ const Login = ({ onSuccess, onCancel }) => {
               type="text"
               value={formData.employeeId}
               onChange={(e) => handleInputChange('employeeId', e.target.value)}
-              placeholder="Enter employee ID"
+              placeholder="e.g., DEV001, DEV002, DEV003"
               className="form-input"
               required
             />
+            <small className="form-hint">Available: DEV001 to DEV008</small>
           </div>
 
           <div className="form-group">

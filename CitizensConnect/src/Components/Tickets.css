@@ -104,7 +104,13 @@
   border-radius: 8px;
   font-size: 1rem;
   width: 300px;
+  color: #374151;
+  background-color: #ffffff;
   transition: border-color 0.2s ease;
+}
+
+.search-bar input::placeholder {
+  color: #9ca3af;
 }
 
 .search-bar input:focus {

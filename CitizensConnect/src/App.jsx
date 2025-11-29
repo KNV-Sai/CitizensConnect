@@ -159,23 +159,16 @@ function ProfileView({ user, onClose, onLogout }) {
   return (
     <div className="profile-view">
       <h3 className="modal-title">Profile</h3>
-      <div className="profile-image-container">
-        <img
-          src={user.profileImage}
-          alt={`${user.name}'s profile`}
-          className="profile-image"
-          onError={(e) => {
-            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6a47f2&color=fff&size=120`;
-          }}
-        />
-      </div>
       <div className="profile-info">
         <p><strong>Name:</strong> {user.name}</p>
         <p><strong>Email:</strong> {user.email}</p>
         <p><strong>Role:</strong> {user.role}</p>
         {user.aadharNumber && <p><strong>Aadhar:</strong> ****{user.aadharNumber.slice(-4)}</p>}
         {user.employeeId && <p><strong>Employee ID:</strong> {user.employeeId}</p>}
+        {user.department && <p><strong>Department:</strong> {user.department}</p>}
+        {user.designation && <p><strong>Designation:</strong> {user.designation}</p>}
         {user.party && <p><strong>Party:</strong> {user.party}</p>}
+        {user.constituency && <p><strong>Constituency:</strong> {user.constituency}</p>}
       </div>
       <div className="profile-actions">
         <button className="btn-ghost" onClick={onLogout}>
