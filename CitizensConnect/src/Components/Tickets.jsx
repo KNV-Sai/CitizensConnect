@@ -25,7 +25,8 @@ const Tickets = () => {
   const {
     tickets, onlineIssues, refreshOnlineIssues, lastOnlineUpdate,
     createTicket, voteTicket, markTicketDone, assignPolitician,
-    messages, sendMessage, loadMessages, joinTicketRoom, leaveTicketRoom
+    messages, sendMessage, loadMessages, joinTicketRoom, leaveTicketRoom,
+    likeComment
   } = useSocket();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -34,7 +35,9 @@ const Tickets = () => {
   const [sortBy, setSortBy] = useState('newest'); // newest, priority, votes
   const [searchTerm, setSearchTerm] = useState('');
   const [messageInput, setMessageInput] = useState('');
+  const [likedMessages, setLikedMessages] = useState(new Set());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [commentPosted, setCommentPosted] = useState(false);
 
   // Form states
   const [ticketForm, setTicketForm] = useState({
@@ -128,7 +131,21 @@ const Tickets = () => {
     if (messageInput.trim()) {
       sendMessage(ticketId, messageInput);
       setMessageInput('');
+      setCommentPosted(true);
+      setTimeout(() => setCommentPosted(false), 3000); // Hide after 3 seconds
+      // Scroll to bottom after sending message
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
+  };
+
+  const handleLikeComment = (ticketId, messageId) => {
+    likeComment(ticketId, messageId);
+  };
+
+  const handleLikeMessage = (messageId) => {
+    handleLikeComment(selectedTicket.id, messageId);
   };
 
   const handleRefreshOnlineIssues = async () => {
@@ -447,6 +464,46 @@ const Tickets = () => {
                   </div>
                 )}
 
+                {/* Like Status Display */}
+                {ticket.voters?.includes(user?.uid) && (
+                  <div className="like-status">
+                    <ThumbsUp size={14} className="liked-icon" />
+                    <span>You liked this issue</span>
+                  </div>
+                )}
+
+                {/* Recent Comments Display */}
+                {ticket.comments && ticket.comments.length > 0 && (
+                  <div className="recent-comments">
+                    <div className="comment-preview">
+                      <MessageSquare size={14} />
+                      <span className="comment-count">{ticket.comments.length} comment{ticket.comments.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    {ticket.comments.slice(0, 2).map((comment, idx) => (
+                      <div key={idx} className="comment-snippet">
+                        <div className="comment-author">
+                          <User size={12} />
+                          <span>{comment.author}</span>
+                        </div>
+                        <div className="comment-text">
+                          {comment.content.length > 80
+                            ? `${comment.content.substring(0, 80)}...`
+                            : comment.content
+                          }
+                        </div>
+                        <div className="comment-time">
+                          {new Date(comment.timestamp).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                    {ticket.comments.length > 2 && (
+                      <div className="more-comments">
+                        +{ticket.comments.length - 2} more comment{ticket.comments.length - 2 !== 1 ? 's' : ''}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="ticket-footer">
                   <div className="ticket-author">
                     <User size={16} />
@@ -458,21 +515,26 @@ const Tickets = () => {
 
                   <div className="ticket-actions">
                     <button
-                      className={`vote-btn ${ticket.voters?.includes(user?.uid) ? 'voted' : ''} ${ticket.isOnlineIssue ? 'disabled' : ''}`}
+                      className={`vote-btn ${ticket.voters?.includes(user?.uid) ? 'voted liked' : ''} ${ticket.isOnlineIssue ? 'disabled' : ''}`}
                       onClick={() => handleVote(ticket.id)}
                       disabled={ticket.isOnlineIssue}
-                      title={ticket.isOnlineIssue ? 'Cannot vote on online issues' : 'Vote for this issue'}
+                      title={ticket.isOnlineIssue ? 'Cannot vote on online issues' : ticket.voters?.includes(user?.uid) ? 'Unlike this issue' : 'Like this issue'}
                     >
-                      <ThumbsUp size={16} />
+                      <ThumbsUp size={16} className={ticket.voters?.includes(user?.uid) ? 'filled' : ''} />
                       <span>{ticket.upvotes || 0}</span>
+                      {ticket.voters?.includes(user?.uid) && <span className="like-text">Liked</span>}
                     </button>
 
                     <button
-                      className="comment-btn"
+                      className={`comment-btn ${ticket.comments?.some(comment => comment.authorId === user?.uid) ? 'commented' : ''}`}
                       onClick={() => openTicketDetails(ticket)}
+                      title={ticket.comments?.some(comment => comment.authorId === user?.uid) ? 'You commented on this issue - view discussion' : 'View all comments and add your comment'}
                     >
-                      <MessageSquare size={16} />
+                      <MessageSquare size={16} className={ticket.comments?.some(comment => comment.authorId === user?.uid) ? 'filled' : ''} />
                       <span>{ticket.comments?.length || 0}</span>
+                      <span className="comment-text">
+                        {ticket.comments?.some(comment => comment.authorId === user?.uid) ? 'Commented' : 'Comment'}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -527,8 +589,8 @@ const Tickets = () => {
                     .filter(msg => msg.ticketId === selectedTicket.id)
                     .map((message, idx) => (
                       <div
-                        key={idx}
-                        className={`message ${message.authorRole === 'Politician' ? 'politician-message' : ''}`}
+                        key={message.id || `msg_${idx}`}
+                        className={`message ${message.authorRole === 'Politician' ? 'politician-message' : ''} ${message.authorId === user?.uid ? 'my-message' : ''}`}
                       >
                         <div className="message-header">
                           <strong className="message-author">{message.author}</strong>
@@ -538,25 +600,61 @@ const Tickets = () => {
                           </span>
                         </div>
                         <div className="message-content">{message.content}</div>
+                        <div className="message-actions">
+                          <button
+                            className={`message-like-btn ${message.likes?.includes(user?.uid) ? 'liked' : ''}`}
+                            onClick={() => handleLikeMessage(message.id || `msg_${idx}`)}
+                            title={message.likes?.includes(user?.uid) ? 'Unlike this comment' : 'Like this comment'}
+                          >
+                            <ThumbsUp size={14} className={message.likes?.includes(user?.uid) ? 'filled' : ''} />
+                            <span className="like-text">
+                              {message.likes?.includes(user?.uid) ? 'Liked' : 'Like'}
+                            </span>
+                            {(message.likeCount || 0) > 0 && (
+                              <span className="like-count">{message.likeCount}</span>
+                            )}
+                          </button>
+                          {message.likes?.includes(user?.uid) && (
+                            <span className="user-liked-indicator">You liked this</span>
+                          )}
+                          {message.authorId === user?.uid && (
+                            <span className="own-comment-indicator">Your comment</span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   <div ref={messagesEndRef} />
                 </div>
 
-                <div className="message-input">
-                  <input
-                    type="text"
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    placeholder="Type your message..."
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(selectedTicket.id)}
-                  />
-                  <button
-                    onClick={() => handleSendMessage(selectedTicket.id)}
-                    disabled={!messageInput.trim()}
-                  >
-                    <Send size={18} />
-                  </button>
+                <div className="message-input-section">
+                  <div className="message-input-header">
+                    <MessageSquare size={16} />
+                    <span>Add your comment</span>
+                    {commentPosted && (
+                      <span className="comment-success">
+                        ✓ Comment posted successfully!
+                      </span>
+                    )}
+                  </div>
+                  <div className="message-input">
+                    <input
+                      type="text"
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      placeholder="Share your thoughts, suggestions, or updates..."
+                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(selectedTicket.id)}
+                    />
+                    <button
+                      onClick={() => handleSendMessage(selectedTicket.id)}
+                      disabled={!messageInput.trim()}
+                      className={!messageInput.trim() ? 'disabled' : ''}
+                    >
+                      <Send size={18} />
+                    </button>
+                  </div>
+                  <div className="comment-tips">
+                    <span>💡 Tip: Your comment will be visible to everyone following this issue. You can like comments to show appreciation!</span>
+                  </div>
                 </div>
               </div>
             </div>

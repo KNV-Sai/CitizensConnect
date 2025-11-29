@@ -77,6 +77,14 @@ export const SocketProvider = ({ children }) => {
         setMessages(loadedMessages);
       });
 
+      newSocket.on('comment_liked', (data) => {
+        setMessages(prev => prev.map(msg =>
+          msg.id === data.messageId
+            ? { ...msg, likes: data.likes, likeCount: data.likeCount }
+            : msg
+        ));
+      });
+
       setSocket(newSocket);
     }
 
@@ -137,12 +145,26 @@ export const SocketProvider = ({ children }) => {
   const sendMessage = (ticketId, content) => {
     if (socket && isConnected) {
       socket.emit('send_message', {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         ticketId,
         content,
         author: user.name,
         authorId: user.uid,
         authorRole: user.role,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        likes: [],
+        likeCount: 0
+      });
+    }
+  };
+
+  const likeComment = (ticketId, messageId) => {
+    if (socket && isConnected) {
+      socket.emit('like_comment', {
+        ticketId,
+        messageId,
+        userId: user.uid,
+        userName: user.name
       });
     }
   };
@@ -285,7 +307,8 @@ export const SocketProvider = ({ children }) => {
     loadMessages,
     joinTicketRoom,
     leaveTicketRoom,
-    refreshOnlineIssues
+    refreshOnlineIssues,
+    likeComment
   };
 
   return (
