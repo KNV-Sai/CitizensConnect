@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useDropzone } from 'react-dropzone';
+import apiService from '../services/api';
 import {
   MessageSquare, ThumbsUp, Camera, MapPin, AlertTriangle,
   CheckCircle, Clock, User, Tag, Send, X, ChevronDown, RefreshCw, ChevronUp
@@ -28,8 +29,7 @@ const Tickets = () => {
   const {
     tickets, onlineIssues, refreshOnlineIssues, lastOnlineUpdate,
     createTicket, voteTicket, markTicketDone, assignPolitician,
-    messages, sendMessage, loadMessages, joinTicketRoom, leaveTicketRoom,
-    likeComment, deleteTicket, deleteComment
+    deleteTicket
   } = useSocket();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -41,6 +41,7 @@ const Tickets = () => {
   const [likedMessages, setLikedMessages] = useState(new Set());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [commentPosted, setCommentPosted] = useState(false);
+  const [comments, setComments] = useState([]);
 
   // Form states
   const [ticketForm, setTicketForm] = useState({
@@ -136,21 +137,39 @@ const Tickets = () => {
     markTicketDone(ticketId);
   };
 
-  const handleSendMessage = (ticketId) => {
+  const handleSendMessage = async (ticketId) => {
     if (messageInput.trim()) {
-      sendMessage(ticketId, messageInput);
-      setMessageInput('');
-      setCommentPosted(true);
-      setTimeout(() => setCommentPosted(false), 3000); // Hide after 3 seconds
-      // Scroll to bottom after sending message
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+      try {
+        const response = await apiService.addComment(ticketId, messageInput.trim());
+
+        if (response.success) {
+          // Add the new comment to local state
+          const newComment = response.data.comment;
+          setComments(prev => [...prev, newComment]);
+          setSelectedTicket(prev => prev ? {
+            ...prev,
+            comments: [...(prev.comments || []), newComment]
+          } : null);
+
+          setMessageInput('');
+          setCommentPosted(true);
+          setTimeout(() => setCommentPosted(false), 3000); // Hide after 3 seconds
+
+          // Scroll to bottom after sending message
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Failed to add comment:', error);
+        alert('Failed to add comment. Please try again.');
+      }
     }
   };
 
   const handleLikeComment = (ticketId, messageId) => {
-    likeComment(ticketId, messageId);
+    // For now, disable like functionality until backend supports it
+    console.log('Like functionality not implemented in backend yet');
   };
 
   const handleLikeMessage = (messageId) => {
@@ -170,17 +189,30 @@ const Tickets = () => {
     }
   };
 
-  const openTicketDetails = (ticket) => {
-    setSelectedTicket(ticket);
-    loadMessages(ticket.id);
-    joinTicketRoom(ticket.id);
+  const openTicketDetails = async (ticket) => {
+    try {
+      setSelectedTicket(ticket);
+      // Fetch comments from the backend
+      if (ticket.comments) {
+        setComments(ticket.comments);
+      } else {
+        // If comments are not populated, fetch the full issue
+        const response = await apiService.getIssue(ticket.id);
+        if (response.success) {
+          setSelectedTicket(response.data.issue);
+          setComments(response.data.issue.comments || []);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load ticket details:', error);
+      setSelectedTicket(ticket);
+      setComments([]);
+    }
   };
 
   const closeTicketDetails = () => {
-    if (selectedTicket) {
-      leaveTicketRoom(selectedTicket.id);
-    }
     setSelectedTicket(null);
+    setComments([]);
   };
 
   // Combine tickets and online issues, preferring user tickets over online issues
@@ -548,7 +580,7 @@ const Tickets = () => {
                       <div key={idx} className="comment-snippet">
                         <div className="comment-author">
                           <User size={12} />
-                          <span>{comment.author}</span>
+                          <span>{comment.user?.name || comment.author}</span>
                         </div>
                         <div className="comment-text">
                           {comment.content.length > 80
@@ -557,7 +589,7 @@ const Tickets = () => {
                           }
                         </div>
                         <div className="comment-time">
-                          {new Date(comment.timestamp).toLocaleDateString()}
+                          {new Date(comment.createdAt || comment.timestamp).toLocaleDateString()}
                         </div>
                       </div>
                     ))}
@@ -649,60 +681,70 @@ const Tickets = () => {
                 <h3>Discussion</h3>
 
                 <div className="messages-list">
-                  {messages
-                    .filter(msg => msg.ticketId === selectedTicket.id)
-                    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-                    .map((message, idx) => {
-                      // Ensure message has an ID
-                      const messageId = message.id || message._id || `msg_${message.timestamp}_${idx}`;
+                  {comments
+                    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+                    .map((comment) => {
+                      const commentId = comment._id || comment.id;
+                      const isOwnComment = comment.user._id === user?.uid || comment.user === user?.uid;
 
                       return (
                         <div
-                          key={messageId}
-                          className={`message ${message.authorRole === 'Politician' ? 'politician-message' : ''} ${message.authorId === user?.uid ? 'my-message' : ''}`}
+                          key={commentId}
+                          className={`message ${comment.user.role === 'Politician' ? 'politician-message' : ''} ${isOwnComment ? 'my-message' : ''}`}
                         >
                           <div className="message-header">
-                            <strong className="message-author">{message.author}</strong>
-                            <span className="message-role">{message.authorRole}</span>
+                            <strong className="message-author">{comment.user.name}</strong>
+                            <span className="message-role">{comment.user.role}</span>
                             <span className="message-time">
-                              {new Date(message.timestamp).toLocaleString()}
+                              {new Date(comment.createdAt).toLocaleString()}
                             </span>
                           </div>
-                          <div className="message-content">{message.content}</div>
+                          <div className="message-content">{comment.content}</div>
                           <div className="message-actions">
                             <button
-                              className={`message-like-btn ${message.likes?.includes(user?.uid) ? 'liked' : ''}`}
-                              onClick={() => handleLikeMessage(messageId)}
-                              title={message.likes?.includes(user?.uid) ? 'Unlike this comment' : 'Like this comment'}
+                              className={`message-like-btn ${comment.likes?.includes(user?.uid) ? 'liked' : ''}`}
+                              onClick={() => handleLikeComment(selectedTicket.id, commentId)}
+                              title={comment.likes?.includes(user?.uid) ? 'Unlike this comment' : 'Like this comment'}
                             >
-                              <ChevronUp size={14} className={message.likes?.includes(user?.uid) ? 'filled' : ''} />
+                              <ChevronUp size={14} className={comment.likes?.includes(user?.uid) ? 'filled' : ''} />
                               <span className="like-text">
-                                {message.likes?.includes(user?.uid) ? 'Liked' : 'Like'}
+                                {comment.likes?.includes(user?.uid) ? 'Liked' : 'Like'}
                               </span>
-                              {(message.likeCount || 0) > 0 && (
-                                <span className="like-count">({message.likeCount})</span>
+                              {(comment.likes?.length || 0) > 0 && (
+                                <span className="like-count">({comment.likes.length})</span>
                               )}
                             </button>
 
-                            {user?.role === 'Developer' && (
+                            {(user?.role === 'Developer' || isOwnComment) && (
                               <button
                                 className="message-delete-btn"
-                                onClick={() => {
+                                onClick={async () => {
                                   if (window.confirm('Are you sure you want to delete this comment?')) {
-                                    deleteComment(selectedTicket.id, messageId);
+                                    try {
+                                      await apiService.deleteComment(selectedTicket.id, commentId);
+                                      // Remove comment from local state
+                                      setComments(prev => prev.filter(c => c._id !== commentId && c.id !== commentId));
+                                      setSelectedTicket(prev => prev ? {
+                                        ...prev,
+                                        comments: prev.comments.filter(c => c._id !== commentId && c.id !== commentId)
+                                      } : null);
+                                    } catch (error) {
+                                      console.error('Failed to delete comment:', error);
+                                      alert('Failed to delete comment. Please try again.');
+                                    }
                                   }
                                 }}
-                                title="Delete Comment (Developer Only)"
+                                title="Delete Comment"
                               >
                                 <X size={14} />
                                 <span className="delete-text">Delete</span>
                               </button>
                             )}
 
-                            {message.likes?.includes(user?.uid) && (
+                            {comment.likes?.includes(user?.uid) && (
                               <span className="user-liked-indicator">You liked this</span>
                             )}
-                            {message.authorId === user?.uid && (
+                            {isOwnComment && (
                               <span className="own-comment-indicator">Your comment</span>
                             )}
                           </div>
