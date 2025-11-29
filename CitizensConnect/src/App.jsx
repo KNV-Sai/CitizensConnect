@@ -159,6 +159,16 @@ function ProfileView({ user, onClose, onLogout }) {
   return (
     <div className="profile-view">
       <h3 className="modal-title">Profile</h3>
+      <div className="profile-image-container">
+        <img
+          src={user.profileImage}
+          alt={`${user.name}'s profile`}
+          className="profile-image"
+          onError={(e) => {
+            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6a47f2&color=fff&size=120`;
+          }}
+        />
+      </div>
       <div className="profile-info">
         <p><strong>Name:</strong> {user.name}</p>
         <p><strong>Email:</strong> {user.email}</p>

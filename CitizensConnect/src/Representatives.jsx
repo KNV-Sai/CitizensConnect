@@ -212,15 +212,31 @@ export default function Representatives() {
 
             <div className="state-leaders-list">
               {state.leaders.map((leader, leaderIdx) => (
-                <a
-                  key={leaderIdx}
-                  href={leader.profileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="leader-link"
-                >
-                  {leader.name} ({leader.role})
-                </a>
+                <div key={leaderIdx} className="leader-item">
+                  <div className="leader-image-container">
+                    <img
+                      src={leader.imageUrl}
+                      alt={`${leader.name}`}
+                      className="leader-image-small"
+                      onError={(e) => {
+                        e.target.src = `https://via.placeholder.com/60x60/6a47f2/ffffff?text=${leader.name.charAt(0)}`;
+                      }}
+                    />
+                  </div>
+                  <div className="leader-info-small">
+                    <div className="leader-name-small">{leader.name}</div>
+                    <div className="leader-role-small">{leader.role}</div>
+                    <a
+                      href={leader.profileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="leader-link-small"
+                    >
+                      <ExternalLink size={12} />
+                      Profile
+                    </a>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -279,16 +295,29 @@ export default function Representatives() {
               <div className="ut-leaders">
                 {ut.leaders.map((leader, leaderIdx) => (
                   <div key={leaderIdx} className="leader-item">
-                    <span className="leader-role">{leader.role}:</span>
-                    <span className="leader-name">{leader.name}</span>
-                    <a
-                      href={leader.profileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="external-link"
-                    >
-                      <ExternalLink size={12} />
-                    </a>
+                    <div className="leader-image-container">
+                      <img
+                        src={leader.imageUrl}
+                        alt={`${leader.name}`}
+                        className="leader-image-small"
+                        onError={(e) => {
+                          e.target.src = `https://via.placeholder.com/60x60/6a47f2/ffffff?text=${leader.name.charAt(0)}`;
+                        }}
+                      />
+                    </div>
+                    <div className="leader-info-small">
+                      <div className="leader-role-small">{leader.role}</div>
+                      <div className="leader-name-small">{leader.name}</div>
+                      <a
+                        href={leader.profileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="leader-link-small"
+                      >
+                        <ExternalLink size={12} />
+                        Profile
+                      </a>
+                    </div>
                   </div>
                 ))}
               </div>

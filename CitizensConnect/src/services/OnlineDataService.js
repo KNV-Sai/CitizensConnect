@@ -38,8 +38,10 @@ class OnlineDataService {
 
   // Convert news article to issue format
   convertToIssue(article, source) {
+    // Use URL as stable ID for consistent identification across refreshes
+    const stableId = article.url ? `online_${article.url.replace(/[^a-zA-Z0-9]/g, '').substr(0, 20)}` : `online_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     return {
-      id: `online_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: stableId,
       title: article.title,
       description: article.description || article.content || 'No description available',
       category: this.categorizeArticle(article),
@@ -48,7 +50,7 @@ class OnlineDataService {
       author: source.name,
       authorId: `online_${source.id}`,
       authorRole: 'Online Source',
-      upvotes: 0,
+      upvotes: 31,
       voters: [],
       createdAt: article.publishedAt || new Date().toISOString(),
       location: this.extractLocation(article),

@@ -56,6 +56,7 @@ export const AuthProvider = ({ children }) => {
           email: firebaseUser.email,
           role: userRole,
           name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+          profileImage: `https://ui-avatars.com/api/?name=${encodeURIComponent(firebaseUser.displayName || firebaseUser.email.split('@')[0])}&background=6a47f2&color=fff&size=120`,
           authenticated: true
         };
         setUser(userData);
@@ -96,6 +97,7 @@ export const AuthProvider = ({ children }) => {
         role: 'Developer',
         name: 'Developer User',
         employeeId,
+        profileImage: 'https://ui-avatars.com/api/?name=Developer+User&background=22c55e&color=fff&size=120',
         authenticated: true
       };
       setUser(mockUser);
@@ -109,8 +111,16 @@ export const AuthProvider = ({ children }) => {
   const loginAsPolitician = async (identifier, password) => {
     // For demo purposes - in real app, verify against politician database
     const validPoliticians = {
-      'NCBNaidu': { name: 'N. Chandrababu Naidu', party: 'TDP' },
-      'YSJagan': { name: 'Y. S. Jagan Mohan Reddy', party: 'YSRCP' }
+      'NCBNaidu': {
+        name: 'N. Chandrababu Naidu',
+        party: 'TDP',
+        profileImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/N._Chandrababu_Naidu.jpg/300px-N._Chandrababu_Naidu.jpg'
+      },
+      'YSJagan': {
+        name: 'Y. S. Jagan Mohan Reddy',
+        party: 'YSRCP',
+        profileImage: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Y._S._Jaganmohan_Reddy.jpg/300px-Y._S._Jaganmohan_Reddy.jpg'
+      }
     };
 
     if (validPoliticians[identifier] && password === 'politician123') {
@@ -120,6 +130,7 @@ export const AuthProvider = ({ children }) => {
         role: 'Politician',
         name: validPoliticians[identifier].name,
         party: validPoliticians[identifier].party,
+        profileImage: validPoliticians[identifier].profileImage,
         authenticated: true
       };
       setUser(mockUser);
@@ -139,6 +150,7 @@ export const AuthProvider = ({ children }) => {
         role: 'Citizen',
         name: `Citizen ${aadharNumber.slice(-4)}`,
         aadharNumber,
+        profileImage: `https://ui-avatars.com/api/?name=Citizen+${aadharNumber.slice(-4)}&background=6a47f2&color=fff&size=120`,
         authenticated: true
       };
       setUser(mockUser);

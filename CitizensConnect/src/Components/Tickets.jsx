@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useDropzone } from 'react-dropzone';
 import {
   MessageSquare, ThumbsUp, Camera, MapPin, AlertTriangle,
-  CheckCircle, Clock, User, Tag, Send, X, ChevronDown, RefreshCw
+  CheckCircle, Clock, User, Tag, Send, X, ChevronDown, RefreshCw, ChevronUp
 } from 'lucide-react';
 import './Tickets.css';
 
@@ -21,6 +22,7 @@ const TICKET_CATEGORIES = [
 ];
 
 const Tickets = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const {
     tickets, onlineIssues, refreshOnlineIssues, lastOnlineUpdate,
@@ -86,7 +88,7 @@ const Tickets = () => {
     }));
   };
 
-  const handleCreateTicket = (e) => {
+  const handleCreateTicket = async (e) => {
     e.preventDefault();
     if (!ticketForm.title.trim() || !ticketForm.description.trim()) return;
 
@@ -100,6 +102,7 @@ const Tickets = () => {
       createdAt: new Date().toISOString()
     };
 
+    // Create the ticket
     createTicket(ticketData);
 
     // Reset form
@@ -113,12 +116,17 @@ const Tickets = () => {
       taggedPoliticians: []
     });
     setShowCreateForm(false);
+
+    // Scroll to top to show the newly created ticket
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
   const handleVote = (ticketId) => {
-    // Only allow voting on citizen-reported issues, not online issues
+    // Allow voting on both citizen-reported issues and online issues
     const issue = allIssues.find(i => i.id === ticketId);
-    if (!issue?.isOnlineIssue) {
+    if (issue) {
       voteTicket(ticketId);
     }
   };
@@ -145,7 +153,9 @@ const Tickets = () => {
   };
 
   const handleLikeMessage = (messageId) => {
-    handleLikeComment(selectedTicket.id, messageId);
+    if (selectedTicket && messageId) {
+      likeComment(selectedTicket.id, messageId);
+    }
   };
 
   const handleRefreshOnlineIssues = async () => {
@@ -467,7 +477,7 @@ const Tickets = () => {
                 {/* Like Status Display */}
                 {ticket.voters?.includes(user?.uid) && (
                   <div className="like-status">
-                    <ThumbsUp size={14} className="liked-icon" />
+                    <ChevronUp size={14} className="liked-icon" />
                     <span>You liked this issue</span>
                   </div>
                 )}
@@ -515,12 +525,11 @@ const Tickets = () => {
 
                   <div className="ticket-actions">
                     <button
-                      className={`vote-btn ${ticket.voters?.includes(user?.uid) ? 'voted liked' : ''} ${ticket.isOnlineIssue ? 'disabled' : ''}`}
+                      className={`vote-btn ${ticket.voters?.includes(user?.uid) ? 'voted liked' : ''}`}
                       onClick={() => handleVote(ticket.id)}
-                      disabled={ticket.isOnlineIssue}
-                      title={ticket.isOnlineIssue ? 'Cannot vote on online issues' : ticket.voters?.includes(user?.uid) ? 'Unlike this issue' : 'Like this issue'}
+                      title={ticket.voters?.includes(user?.uid) ? 'Unlike this issue' : 'Like this issue'}
                     >
-                      <ThumbsUp size={16} className={ticket.voters?.includes(user?.uid) ? 'filled' : ''} />
+                      <ChevronUp size={16} className={ticket.voters?.includes(user?.uid) ? 'filled' : ''} />
                       <span>{ticket.upvotes || 0}</span>
                       {ticket.voters?.includes(user?.uid) && <span className="like-text">Liked</span>}
                     </button>
@@ -587,42 +596,48 @@ const Tickets = () => {
                 <div className="messages-list">
                   {messages
                     .filter(msg => msg.ticketId === selectedTicket.id)
-                    .map((message, idx) => (
-                      <div
-                        key={message.id || `msg_${idx}`}
-                        className={`message ${message.authorRole === 'Politician' ? 'politician-message' : ''} ${message.authorId === user?.uid ? 'my-message' : ''}`}
-                      >
-                        <div className="message-header">
-                          <strong className="message-author">{message.author}</strong>
-                          <span className="message-role">{message.authorRole}</span>
-                          <span className="message-time">
-                            {new Date(message.timestamp).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="message-content">{message.content}</div>
-                        <div className="message-actions">
-                          <button
-                            className={`message-like-btn ${message.likes?.includes(user?.uid) ? 'liked' : ''}`}
-                            onClick={() => handleLikeMessage(message.id || `msg_${idx}`)}
-                            title={message.likes?.includes(user?.uid) ? 'Unlike this comment' : 'Like this comment'}
-                          >
-                            <ThumbsUp size={14} className={message.likes?.includes(user?.uid) ? 'filled' : ''} />
-                            <span className="like-text">
-                              {message.likes?.includes(user?.uid) ? 'Liked' : 'Like'}
+                    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+                    .map((message, idx) => {
+                      // Ensure message has an ID
+                      const messageId = message.id || message._id || `msg_${message.timestamp}_${idx}`;
+
+                      return (
+                        <div
+                          key={messageId}
+                          className={`message ${message.authorRole === 'Politician' ? 'politician-message' : ''} ${message.authorId === user?.uid ? 'my-message' : ''}`}
+                        >
+                          <div className="message-header">
+                            <strong className="message-author">{message.author}</strong>
+                            <span className="message-role">{message.authorRole}</span>
+                            <span className="message-time">
+                              {new Date(message.timestamp).toLocaleString()}
                             </span>
-                            {(message.likeCount || 0) > 0 && (
-                              <span className="like-count">{message.likeCount}</span>
+                          </div>
+                          <div className="message-content">{message.content}</div>
+                          <div className="message-actions">
+                            <button
+                              className={`message-like-btn ${message.likes?.includes(user?.uid) ? 'liked' : ''}`}
+                              onClick={() => handleLikeMessage(messageId)}
+                              title={message.likes?.includes(user?.uid) ? 'Unlike this comment' : 'Like this comment'}
+                            >
+                              <ChevronUp size={14} className={message.likes?.includes(user?.uid) ? 'filled' : ''} />
+                              <span className="like-text">
+                                {message.likes?.includes(user?.uid) ? 'Liked' : 'Like'}
+                              </span>
+                              {(message.likeCount || 0) > 0 && (
+                                <span className="like-count">({message.likeCount})</span>
+                              )}
+                            </button>
+                            {message.likes?.includes(user?.uid) && (
+                              <span className="user-liked-indicator">You liked this</span>
                             )}
-                          </button>
-                          {message.likes?.includes(user?.uid) && (
-                            <span className="user-liked-indicator">You liked this</span>
-                          )}
-                          {message.authorId === user?.uid && (
-                            <span className="own-comment-indicator">Your comment</span>
-                          )}
+                            {message.authorId === user?.uid && (
+                              <span className="own-comment-indicator">Your comment</span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   <div ref={messagesEndRef} />
                 </div>
 

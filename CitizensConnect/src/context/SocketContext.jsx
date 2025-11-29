@@ -63,18 +63,30 @@ export const SocketProvider = ({ children }) => {
       newSocket.on('ticket_voted', (data) => {
         setTickets(prev => prev.map(ticket =>
           ticket.id === data.ticketId
-            ? { ...ticket, upvotes: data.upvotes }
+            ? { ...ticket, upvotes: data.upvotes, voters: data.voters }
             : ticket
         ));
       });
 
       // Message events
       newSocket.on('message_received', (message) => {
-        setMessages(prev => [...prev, message]);
+        setMessages(prev => {
+          // Avoid duplicates
+          const exists = prev.some(msg => msg.id === message.id);
+          if (!exists) {
+            return [...prev, message];
+          }
+          return prev;
+        });
       });
 
       newSocket.on('messages_loaded', (loadedMessages) => {
-        setMessages(loadedMessages);
+        // Merge with existing local messages to avoid duplicates
+        setMessages(prev => {
+          const existingIds = new Set(prev.map(msg => msg.id));
+          const newMessages = loadedMessages.filter(msg => !existingIds.has(msg.id));
+          return [...prev, ...newMessages];
+        });
       });
 
       newSocket.on('comment_liked', (data) => {
@@ -99,18 +111,94 @@ export const SocketProvider = ({ children }) => {
 
   // Ticket functions
   const createTicket = (ticketData) => {
+    const newTicket = {
+      ...ticketData,
+      author: user.name,
+      authorId: user.uid,
+      authorRole: user.role,
+      createdAt: new Date().toISOString()
+    };
+
+    // Always add to local state immediately
+    setTickets(prev => [newTicket, ...prev]);
+
     if (socket && isConnected) {
-      socket.emit('create_ticket', {
-        ...ticketData,
-        author: user.name,
-        authorId: user.uid,
-        authorRole: user.role,
-        createdAt: new Date().toISOString()
-      });
+      socket.emit('create_ticket', newTicket);
     }
   };
 
   const voteTicket = (ticketId) => {
+    // Check if it's a ticket or online issue
+    const ticketIndex = tickets.findIndex(ticket => ticket.id === ticketId);
+    const onlineIssueIndex = onlineIssues.findIndex(issue => issue.id === ticketId);
+
+    if (ticketIndex !== -1) {
+      // Update ticket in tickets array
+      const ticket = tickets[ticketIndex];
+      const isVoted = ticket.voters?.includes(user.uid);
+
+      let newUpvotes, newVoters;
+      if (isVoted) {
+        // Remove vote
+        newVoters = ticket.voters.filter(id => id !== user.uid);
+        newUpvotes = Math.max(0, (ticket.upvotes || 0) - 1);
+      } else {
+        // Add vote
+        newVoters = [...(ticket.voters || []), user.uid];
+        newUpvotes = (ticket.upvotes || 0) + 1;
+      }
+
+      // Update local state immediately
+      const updatedTicket = {
+        ...ticket,
+        upvotes: newUpvotes,
+        voters: newVoters
+      };
+
+      setTickets(prev => {
+        const index = prev.findIndex(ticket => ticket.id === ticketId);
+        if (index !== -1) {
+          const newTickets = [...prev];
+          newTickets[index] = updatedTicket;
+          return newTickets;
+        }
+        return prev;
+      });
+    } else if (onlineIssueIndex !== -1) {
+      // Update online issue in onlineIssues array
+      const issue = onlineIssues[onlineIssueIndex];
+      const isVoted = issue.voters?.includes(user.uid);
+
+      let newUpvotes, newVoters;
+      if (isVoted) {
+        // Remove vote
+        newVoters = issue.voters.filter(id => id !== user.uid);
+        newUpvotes = Math.max(0, (issue.upvotes || 0) - 1);
+      } else {
+        // Add vote
+        newVoters = [...(issue.voters || []), user.uid];
+        newUpvotes = (issue.upvotes || 0) + 1;
+      }
+
+      // Update local state immediately
+      const updatedIssue = {
+        ...issue,
+        upvotes: newUpvotes,
+        voters: newVoters
+      };
+
+      setOnlineIssues(prev => {
+        const index = prev.findIndex(issue => issue.id === ticketId);
+        if (index !== -1) {
+          const newIssues = [...prev];
+          newIssues[index] = updatedIssue;
+          return newIssues;
+        }
+        return prev;
+      });
+    }
+
+    // Emit socket event if connected
     if (socket && isConnected) {
       socket.emit('vote_ticket', {
         ticketId,
@@ -143,29 +231,68 @@ export const SocketProvider = ({ children }) => {
 
   // Message functions
   const sendMessage = (ticketId, content) => {
+    const messageData = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ticketId,
+      content,
+      author: user.name,
+      authorId: user.uid,
+      authorRole: user.role,
+      timestamp: new Date().toISOString(),
+      likes: [],
+      likeCount: 0
+    };
+
+    // Always add to local state immediately
+    setMessages(prev => [...prev, messageData]);
+
     if (socket && isConnected) {
-      socket.emit('send_message', {
-        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        ticketId,
-        content,
-        author: user.name,
-        authorId: user.uid,
-        authorRole: user.role,
-        timestamp: new Date().toISOString(),
-        likes: [],
-        likeCount: 0
-      });
+      socket.emit('send_message', messageData);
     }
   };
 
   const likeComment = (ticketId, messageId) => {
-    if (socket && isConnected) {
-      socket.emit('like_comment', {
-        ticketId,
-        messageId,
-        userId: user.uid,
-        userName: user.name
-      });
+    // Find the message in local state first - try multiple ID formats
+    let messageIndex = messages.findIndex(msg => msg.id === messageId);
+    if (messageIndex === -1) {
+      // Try alternative ID formats
+      messageIndex = messages.findIndex(msg =>
+        msg._id === messageId ||
+        msg.id?.endsWith(messageId.split('_').pop()) ||
+        `msg_${msg.timestamp}_${messages.indexOf(msg)}` === messageId
+      );
+    }
+
+    if (messageIndex !== -1) {
+      const message = messages[messageIndex];
+      const isLiked = message.likes?.includes(user.uid);
+      const newLikes = isLiked
+        ? message.likes.filter(id => id !== user.uid)
+        : [...(message.likes || []), user.uid];
+
+      // Update local state immediately
+      const updatedMessage = {
+        ...message,
+        likes: newLikes,
+        likeCount: newLikes.length
+      };
+
+      setMessages(prev => prev.map(msg =>
+        msg.id === message.id ? updatedMessage : msg
+      ));
+
+      // Emit socket event if connected
+      if (socket && isConnected) {
+        socket.emit('like_comment', {
+          ticketId,
+          messageId: message.id, // Use the actual message ID
+          userId: user.uid,
+          userName: user.name,
+          action: isLiked ? 'unlike' : 'like'
+        });
+      }
+    } else {
+      console.warn('Message not found for liking:', messageId);
     }
   };
 
@@ -204,7 +331,7 @@ export const SocketProvider = ({ children }) => {
           author: 'Rajesh Kumar',
           authorId: 'demo_user_1',
           authorRole: 'Citizen',
-          upvotes: 24,
+          upvotes: 31,
           voters: [],
           createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
           location: 'MG Road, Vijayawada'
@@ -219,7 +346,7 @@ export const SocketProvider = ({ children }) => {
           author: 'Priya Sharma',
           authorId: 'demo_user_2',
           authorRole: 'Citizen',
-          upvotes: 12,
+          upvotes: 31,
           voters: [],
           createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
           location: 'Park Street, Vijayawada'
@@ -270,8 +397,22 @@ export const SocketProvider = ({ children }) => {
     const refreshInterval = setInterval(async () => {
       if (OnlineDataService.needsUpdate()) {
         console.log('Auto-refreshing online issues...');
-        const issues = await OnlineDataService.getOnlineIssues();
-        setOnlineIssues(issues);
+        const freshIssues = await OnlineDataService.getOnlineIssues();
+        // Preserve local votes when refreshing
+        setOnlineIssues(currentIssues => {
+          return freshIssues.map(freshIssue => {
+            const existingIssue = currentIssues.find(issue => issue.id === freshIssue.id);
+            if (existingIssue) {
+              // Preserve upvotes and voters from local state
+              return {
+                ...freshIssue,
+                upvotes: existingIssue.upvotes || freshIssue.upvotes,
+                voters: existingIssue.voters || freshIssue.voters
+              };
+            }
+            return freshIssue;
+          });
+        });
         setLastOnlineUpdate(OnlineDataService.getLastUpdateTime());
       }
     }, 60 * 60 * 1000); // Check every hour
@@ -282,10 +423,24 @@ export const SocketProvider = ({ children }) => {
   // Function to manually refresh online issues
   const refreshOnlineIssues = async () => {
     try {
-      const issues = await OnlineDataService.refreshOnlineIssues();
-      setOnlineIssues(issues);
+      const freshIssues = await OnlineDataService.refreshOnlineIssues();
+      // Preserve local votes when refreshing
+      setOnlineIssues(currentIssues => {
+        return freshIssues.map(freshIssue => {
+          const existingIssue = currentIssues.find(issue => issue.id === freshIssue.id);
+          if (existingIssue) {
+            // Preserve upvotes and voters from local state
+            return {
+              ...freshIssue,
+              upvotes: existingIssue.upvotes || freshIssue.upvotes,
+              voters: existingIssue.voters || freshIssue.voters
+            };
+          }
+          return freshIssue;
+        });
+      });
       setLastOnlineUpdate(OnlineDataService.getLastUpdateTime());
-      return issues;
+      return freshIssues;
     } catch (error) {
       console.error('Error refreshing online issues:', error);
       throw error;
