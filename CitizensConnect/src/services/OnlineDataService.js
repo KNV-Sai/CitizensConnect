@@ -52,6 +52,7 @@ class OnlineDataService {
       authorRole: 'Online Source',
       upvotes: 31,
       voters: [],
+      progress: Math.floor(Math.random() * 101), // Random progress 0-100
       createdAt: article.publishedAt || new Date().toISOString(),
       location: this.extractLocation(article),
       source: source,

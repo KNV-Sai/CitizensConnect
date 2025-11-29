@@ -117,6 +117,7 @@ export const SocketProvider = ({ children }) => {
       author: user.name,
       authorId: user.uid,
       authorRole: user.role,
+      progress: 0,
       createdAt: new Date().toISOString()
     };
 
@@ -334,6 +335,7 @@ export const SocketProvider = ({ children }) => {
           authorRole: 'Citizen',
           upvotes: 24,
           voters: [],
+          progress: 65,
           createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
           location: 'MG Road, Vijayawada'
         },
@@ -349,6 +351,7 @@ export const SocketProvider = ({ children }) => {
           authorRole: 'Citizen',
           upvotes: 18,
           voters: [],
+          progress: 100,
           createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
           location: 'Park Street, Vijayawada'
         },
@@ -364,6 +367,7 @@ export const SocketProvider = ({ children }) => {
           authorRole: 'Citizen',
           upvotes: 35,
           voters: [],
+          progress: 25,
           createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
           location: 'Sector 7, Vijayawada'
         },
@@ -379,6 +383,7 @@ export const SocketProvider = ({ children }) => {
           authorRole: 'Citizen',
           upvotes: 42,
           voters: [],
+          progress: 80,
           createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
           location: 'Residential Colony, Vijayawada'
         },
@@ -394,6 +399,7 @@ export const SocketProvider = ({ children }) => {
           authorRole: 'Citizen',
           upvotes: 29,
           voters: [],
+          progress: 100,
           createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
           location: 'Market Area, Vijayawada'
         },
@@ -409,6 +415,7 @@ export const SocketProvider = ({ children }) => {
           authorRole: 'Citizen',
           upvotes: 15,
           voters: [],
+          progress: 45,
           createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
           location: 'Multiple Intersections, Vijayawada'
         }

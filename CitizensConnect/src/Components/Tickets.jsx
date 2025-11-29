@@ -484,6 +484,20 @@ const Tickets = () => {
                 <h3 className="ticket-title">{ticket.title}</h3>
                 <p className="ticket-description">{ticket.description}</p>
 
+                {/* Progress Bar */}
+                <div className="progress-section">
+                  <div className="progress-header">
+                    <span className="progress-label">Progress</span>
+                    <span className="progress-percentage">{ticket.progress || 0}%</span>
+                  </div>
+                  <div className="progress-bar-container">
+                    <div
+                      className="progress-bar-fill"
+                      style={{ width: `${ticket.progress || 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+
                 {ticket.images && ticket.images.length > 0 && (
                   <div className="ticket-images">
                     {ticket.images.slice(0, 3).map((image, idx) => (
