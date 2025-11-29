@@ -4,7 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import { useDropzone } from 'react-dropzone';
 import {
   MessageSquare, ThumbsUp, Camera, MapPin, AlertTriangle,
-  CheckCircle, Clock, User, Tag, Send, X, ChevronDown
+  CheckCircle, Clock, User, Tag, Send, X, ChevronDown, RefreshCw
 } from 'lucide-react';
 import './Tickets.css';
 
@@ -23,16 +23,18 @@ const TICKET_CATEGORIES = [
 const Tickets = () => {
   const { user } = useAuth();
   const {
-    tickets, createTicket, voteTicket, markTicketDone, assignPolitician,
+    tickets, onlineIssues, refreshOnlineIssues, lastOnlineUpdate,
+    createTicket, voteTicket, markTicketDone, assignPolitician,
     messages, sendMessage, loadMessages, joinTicketRoom, leaveTicketRoom
   } = useSocket();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const [filter, setFilter] = useState('all'); // all, open, solved, my_tickets
+  const [filter, setFilter] = useState('all'); // all, open, solved, my_tickets, online_issues
   const [sortBy, setSortBy] = useState('newest'); // newest, priority, votes
   const [searchTerm, setSearchTerm] = useState('');
   const [messageInput, setMessageInput] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Form states
   const [ticketForm, setTicketForm] = useState({
@@ -111,7 +113,11 @@ const Tickets = () => {
   };
 
   const handleVote = (ticketId) => {
-    voteTicket(ticketId);
+    // Only allow voting on citizen-reported issues, not online issues
+    const issue = allIssues.find(i => i.id === ticketId);
+    if (!issue?.isOnlineIssue) {
+      voteTicket(ticketId);
+    }
   };
 
   const handleMarkDone = (ticketId) => {
@@ -122,6 +128,17 @@ const Tickets = () => {
     if (messageInput.trim()) {
       sendMessage(ticketId, messageInput);
       setMessageInput('');
+    }
+  };
+
+  const handleRefreshOnlineIssues = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshOnlineIssues();
+    } catch (error) {
+      console.error('Failed to refresh online issues:', error);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -138,19 +155,26 @@ const Tickets = () => {
     setSelectedTicket(null);
   };
 
-  // Filter and sort tickets
-  const filteredAndSortedTickets = tickets
-    .filter(ticket => {
-      if (!ticket) return false;
+  // Combine tickets and online issues
+  const allIssues = [
+    ...tickets.map(ticket => ({ ...ticket, isOnlineIssue: false })),
+    ...onlineIssues.map(issue => ({ ...issue, isOnlineIssue: true }))
+  ];
+
+  // Filter and sort issues
+  const filteredAndSortedTickets = allIssues
+    .filter(issue => {
+      if (!issue) return false;
 
       const matchesFilter =
         filter === 'all' ||
-        (filter === 'open' && ticket.status === 'open') ||
-        (filter === 'solved' && ticket.status === 'solved') ||
-        (filter === 'my_tickets' && ticket.authorId === user?.uid);
+        (filter === 'open' && issue.status === 'open') ||
+        (filter === 'solved' && issue.status === 'solved') ||
+        (filter === 'my_tickets' && issue.authorId === user?.uid) ||
+        (filter === 'online_issues' && issue.isOnlineIssue);
 
-      const matchesSearch = ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          ticket.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          issue.description.toLowerCase().includes(searchTerm.toLowerCase());
 
       return matchesFilter && matchesSearch;
     })
@@ -185,13 +209,24 @@ const Tickets = () => {
           <h1>Citizen Issues & Concerns</h1>
           <p>Raise civic issues, track progress, and communicate directly with politicians</p>
         </div>
-        <button
-          className="create-ticket-btn"
-          onClick={() => setShowCreateForm(true)}
-        >
-          <MessageSquare size={18} />
-          Create New Issue
-        </button>
+        <div className="header-actions">
+          <button
+            className="refresh-btn"
+            onClick={handleRefreshOnlineIssues}
+            disabled={isRefreshing}
+            title="Refresh online issues"
+          >
+            <RefreshCw size={18} className={isRefreshing ? 'spinning' : ''} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Online Issues'}
+          </button>
+          <button
+            className="create-ticket-btn"
+            onClick={() => setShowCreateForm(true)}
+          >
+            <MessageSquare size={18} />
+            Create New Issue
+          </button>
+        </div>
       </div>
 
       {/* Filters and Search */}
@@ -211,6 +246,7 @@ const Tickets = () => {
             <option value="open">Open</option>
             <option value="solved">Solved</option>
             <option value="my_tickets">My Issues</option>
+            <option value="online_issues">Online Issues</option>
           </select>
 
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
@@ -366,7 +402,7 @@ const Tickets = () => {
             const priorityColor = PRIORITY_LEVELS[ticket.priority]?.color || '#6b7280';
 
             return (
-              <div key={ticket.id} className={`ticket-card ${ticket.status}`}>
+              <div key={ticket.id} className={`ticket-card ${ticket.status} ${ticket.isOnlineIssue ? 'online-issue' : ''}`}>
                 <div className="ticket-header">
                   <div className="ticket-meta">
                     <span className="priority-badge" style={{ backgroundColor: priorityColor }}>
@@ -378,6 +414,12 @@ const Tickets = () => {
                       {ticket.status === 'solved' ? <CheckCircle size={14} /> : <Clock size={14} />}
                       {ticket.status}
                     </span>
+                    {ticket.isOnlineIssue && (
+                      <span className="source-badge online-source">
+                        <MessageSquare size={14} />
+                        Online
+                      </span>
+                    )}
                   </div>
 
                   {user?.role === 'Politician' && ticket.status === 'open' && (
@@ -416,8 +458,10 @@ const Tickets = () => {
 
                   <div className="ticket-actions">
                     <button
-                      className={`vote-btn ${ticket.voters?.includes(user?.uid) ? 'voted' : ''}`}
+                      className={`vote-btn ${ticket.voters?.includes(user?.uid) ? 'voted' : ''} ${ticket.isOnlineIssue ? 'disabled' : ''}`}
                       onClick={() => handleVote(ticket.id)}
+                      disabled={ticket.isOnlineIssue}
+                      title={ticket.isOnlineIssue ? 'Cannot vote on online issues' : 'Vote for this issue'}
                     >
                       <ThumbsUp size={16} />
                       <span>{ticket.upvotes || 0}</span>

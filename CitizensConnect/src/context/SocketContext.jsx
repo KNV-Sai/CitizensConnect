@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import OnlineDataService from '../services/OnlineDataService';
 
 // For demo purposes, we'll use a mock server URL
 // In production, replace with your actual Socket.IO server
@@ -20,7 +21,9 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [tickets, setTickets] = useState([]);
+  const [onlineIssues, setOnlineIssues] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [lastOnlineUpdate, setLastOnlineUpdate] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -227,11 +230,53 @@ export const SocketProvider = ({ children }) => {
     }
   }, [socket, isConnected, tickets.length]);
 
+  // Load online issues on component mount
+  useEffect(() => {
+    const loadOnlineIssues = async () => {
+      try {
+        const issues = await OnlineDataService.getOnlineIssues();
+        setOnlineIssues(issues);
+        setLastOnlineUpdate(OnlineDataService.getLastUpdateTime());
+      } catch (error) {
+        console.error('Error loading online issues:', error);
+      }
+    };
+
+    loadOnlineIssues();
+
+    // Set up daily refresh interval (check every hour)
+    const refreshInterval = setInterval(async () => {
+      if (OnlineDataService.needsUpdate()) {
+        console.log('Auto-refreshing online issues...');
+        const issues = await OnlineDataService.getOnlineIssues();
+        setOnlineIssues(issues);
+        setLastOnlineUpdate(OnlineDataService.getLastUpdateTime());
+      }
+    }, 60 * 60 * 1000); // Check every hour
+
+    return () => clearInterval(refreshInterval);
+  }, []);
+
+  // Function to manually refresh online issues
+  const refreshOnlineIssues = async () => {
+    try {
+      const issues = await OnlineDataService.refreshOnlineIssues();
+      setOnlineIssues(issues);
+      setLastOnlineUpdate(OnlineDataService.getLastUpdateTime());
+      return issues;
+    } catch (error) {
+      console.error('Error refreshing online issues:', error);
+      throw error;
+    }
+  };
+
   const value = {
     socket,
     isConnected,
     tickets,
+    onlineIssues,
     messages,
+    lastOnlineUpdate,
     createTicket,
     voteTicket,
     markTicketDone,
@@ -239,7 +284,8 @@ export const SocketProvider = ({ children }) => {
     sendMessage,
     loadMessages,
     joinTicketRoom,
-    leaveTicketRoom
+    leaveTicketRoom,
+    refreshOnlineIssues
   };
 
   return (
