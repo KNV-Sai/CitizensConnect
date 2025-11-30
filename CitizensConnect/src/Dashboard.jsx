@@ -92,9 +92,9 @@ const Dashboard = () => {
           </div>
 
           <div className="connection-status">
-            <div className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
+            <div className={`status-indicator ${user ? 'connected' : 'disconnected'}`}>
               <div className="status-dot"></div>
-              <span>{isConnected ? 'Live' : 'Offline'}</span>
+              <span>{user ? 'Online' : 'Offline'}</span>
             </div>
           </div>
         </div>
